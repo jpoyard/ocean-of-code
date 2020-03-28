@@ -1,0 +1,59 @@
+{
+  "name": "ocean-of-code",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:nyc": "jest --coverage",
+    "jest": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "@babel/register": "^7.9.0",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
+    "@types/chai": "^4.2.7",
+    "@types/jest": "^25.1.4",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^13.9.5",
+    "chai": "^4.2.0",
+    "jest": "^25.2.3",
+    "mocha": "^6.2.2",
+    "nyc": "^15.0.0",
+    "ts-jest": "^25.2.1",
+    "ts-loader": "^6.2.1",
+    "ts-mocha": "^6.0.0",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.4"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "include": [
+      "src/app/**/*.ts"
+    ],
+    "exclude": [
+      "**/*.test.ts",
+      "./reports/**",
+      "./dist/**"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html",
+      "lcov"
+    ],
+    "report-dir": "./reports/coverage",
+    "all": false,
+    "sourceMap": true,
+    "instrument": true
+  }
+}

@@ -1,0 +1,7 @@
+/stryker.log
+/node_modules/
+/dist/
+/coverage/
+/.nyc_output/
+/reports/
+/.stryker-tmp/
