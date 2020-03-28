@@ -42,4 +42,13 @@ export class Grid extends CellContainer {
         }
         return result;
     }
+
+    public isAvailableCell(cell): boolean {
+        return cell.type === CellTypeEnum.SEA
+    }
+
+    public getAvailableCells(): Cell[] {
+        return this.cells
+            .filter((cell) => this.isAvailableCell(cell))
+    }
 }

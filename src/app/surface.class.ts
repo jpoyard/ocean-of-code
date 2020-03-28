@@ -1,5 +1,5 @@
 import {Cell} from "./cell.class";
-import {ICoordinates} from "./position.class";
+import {ICoordinate} from "./position.class";
 import {CellContainer} from "./cell-container.class";
 
 export class Surface extends CellContainer {
@@ -25,7 +25,7 @@ export class Surface extends CellContainer {
         return this._index;
     }
 
-    public static getSurfaceIndex({x, y}: ICoordinates): number {
+    public static getSurfaceIndex({x, y}: ICoordinate): number {
         return (Math.floor(x / Surface.WIDTH) + Math.floor(y / Surface.WIDTH) * Surface.GRID_WIDTH) + 1;
     }
 }

@@ -1,12 +1,12 @@
-export interface ICoordinates {
+export interface ICoordinate {
     x: number;
     y: number;
 }
 
-export class Position implements ICoordinates {
-    private readonly _coordinates: ICoordinates;
+export class Position implements ICoordinate {
+    private readonly _coordinates: ICoordinate;
 
-    constructor(coordinates: ICoordinates) {
+    constructor(coordinates: ICoordinate) {
         this._coordinates = {...coordinates};
     }
 
@@ -18,32 +18,32 @@ export class Position implements ICoordinates {
         return this._coordinates.y;
     }
 
-    public get coordinate(): ICoordinates {
+    public get coordinate(): ICoordinate {
         return {...this._coordinates};
     }
 
-    public static sum(...coordinatesList: ICoordinates[]): ICoordinates {
+    public static sum(...coordinatesList: ICoordinate[]): ICoordinate {
         return coordinatesList.reduce(
             (acc, cur) => ({x: acc.x + cur.x, y: acc.y + cur.y}),
             {x: 0, y: 0}
         )
     }
 
-    public static equals(...coordinatesList: ICoordinates[]): boolean {
+    public static equals(...coordinatesList: ICoordinate[]): boolean {
         return coordinatesList
             .every(
                 coordinates => coordinatesList[0].x === coordinates.x && coordinatesList[0].y === coordinates.y)
     }
 
-    public static multiply(coordinates: ICoordinates, factor: number) {
+    public static multiply(coordinates: ICoordinate, factor: number) {
         return {
             x: coordinates.x * factor,
             y: coordinates.y * factor
         };
     }
 
-    public static removeDuplicate(coordinatesList: ICoordinates[]): ICoordinates[] {
-        let result: ICoordinates[] = [];
+    public static removeDuplicate(coordinatesList: ICoordinate[]): ICoordinate[] {
+        let result: ICoordinate[] = [];
         let tmpPositions = [...coordinatesList];
         while (tmpPositions.length > 0) {
             const currentPosition = tmpPositions[0];
@@ -53,32 +53,32 @@ export class Position implements ICoordinates {
         return result;
     }
 
-    public static distance(a: ICoordinates, b: ICoordinates): number {
+    public static distance(a: ICoordinate, b: ICoordinate): number {
         return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
     }
 
-    public static pathLength(a: ICoordinates, b: ICoordinates): number {
+    public static pathLength(a: ICoordinate, b: ICoordinate): number {
         return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     }
 
-    public sum(coordinates: ICoordinates): ICoordinates {
+    public sum(coordinates: ICoordinate): ICoordinate {
         return Position.sum(this.coordinate, coordinates);
     }
 
-    public multiply(factor: number): ICoordinates {
+    public multiply(factor: number): ICoordinate {
         return Position.multiply(this.coordinate, factor);
     }
 
-    public equals(coordinates: ICoordinates): boolean {
+    public equals(coordinates: ICoordinate): boolean {
         return Position.equals(this.coordinate, coordinates);
     }
 
 
-    public distance(coordinates: ICoordinates): number {
+    public distance(coordinates: ICoordinate): number {
         return Position.distance(this.coordinate, coordinates);
     }
 
-    public pathLength(coordinates: ICoordinates): number {
+    public pathLength(coordinates: ICoordinate): number {
         return Position.pathLength(this.coordinate, coordinates);
     }
 }

@@ -1,4 +1,4 @@
-import {ICoordinates, Position} from "./position.class";
+import {ICoordinate, Position} from "./position.class";
 
 export enum CellTypeEnum {
     SEA = '.',
@@ -10,7 +10,7 @@ export class Cell extends Position {
     private readonly _surface: number;
     private readonly _type: CellTypeEnum;
 
-    constructor(coordinates: ICoordinates, index: number, type: CellTypeEnum, surface: number) {
+    constructor(coordinates: ICoordinate, index: number, type: CellTypeEnum, surface: number) {
         super(coordinates);
         this._index = index;
         this._type = type;
