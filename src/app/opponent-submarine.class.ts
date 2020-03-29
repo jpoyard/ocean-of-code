@@ -146,8 +146,50 @@ export class OpponentSubmarine extends Submarine {
             .reduce((acc, cur) => [...acc, ...cur], []));
     }
 
+    public keepOnlyPositions(coordinates: ICoordinate[]) {
+        const cellPositions = coordinates
+            .filter(coordinate => !!coordinate)
+            .map(coordinate => this.grid.getCell(this.grid.getIndex(coordinate)));
+        this._moveScenarios.forEach(
+            moveScenario => {
+                Array.from(moveScenario.paths.keys()).forEach(
+                    startPositionIndex => {
+                        const positions = moveScenario.paths.get(startPositionIndex);
+                        const lastPosition = positions[positions.length - 1];
+                        if (!cellPositions.some(position => position === lastPosition)) {
+                            moveScenario.paths.delete(startPositionIndex)
+                        }
+                    }
+                );
+                return moveScenario;
+            }
+        );
+        this.updateMoveStrategies();
+    }
+
+    public excludePositions(coordinates: ICoordinate[]) {
+        const cellPositions = coordinates
+            .filter(coordinate => !!coordinate)
+            .map(coordinate => this.grid.getCell(this.grid.getIndex(coordinate)));
+        this._moveScenarios.forEach(
+            moveScenario => {
+                Array.from(moveScenario.paths.keys()).forEach(
+                    startPositionIndex => {
+                        const positions = moveScenario.paths.get(startPositionIndex);
+                        const lastPosition = positions[positions.length - 1];
+                        if (cellPositions.some(position => position === lastPosition)) {
+                            moveScenario.paths.delete(startPositionIndex)
+                        }
+                    }
+                );
+                return moveScenario;
+            }
+        );
+        this.updateMoveStrategies();
+    }
+
     public keepOnlyPositionsInSurface(index: number): void {
-        if (this._moveScenarios.length > 30 || this._moveScenarios.length === 0) {
+        if (this._moveScenarios.length > 25 || this._moveScenarios.length === 0) {
             const surface = this.grid.surfaces[index];
             this._startPositions = surface.getAvailableCells();
             this._moveScenarios = [this.createMoveScenario()];
@@ -235,7 +277,7 @@ export class OpponentSubmarine extends Submarine {
             this.updateMoveStrategies();
         } else if (this.orders.silence) {
             const positions: Cell[] = this.getPossiblePositions();
-            if (positions.length < 50) {
+            if (this._moveScenarios.length > 30) {
                 this._startPositions = positions;
                 this._moveScenarios = [this.createMoveScenario()];
             }

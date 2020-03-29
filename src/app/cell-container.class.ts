@@ -33,6 +33,10 @@ export class CellContainer {
         return (y * this.width) + x;
     }
 
+    public getOppositeCoordinate({x, y}: ICoordinate): ICoordinate {
+        return {x: Math.abs(x - (this.width - 1)), y: Math.abs(y - (this.height - 1))}
+    }
+
     public isIndexValid(index: number): boolean {
         return index >= 0 && index < (this.width * this.height);
     }

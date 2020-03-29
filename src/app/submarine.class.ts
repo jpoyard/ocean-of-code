@@ -33,7 +33,18 @@ export const MOVE_STRATEGIES: IMoveStrategy[] = [
 
 
 export class Submarine {
-    public life: number;
+    private _life: number = 6;
+
+    public set life(value: number) {
+        this._lost = this._life - value;
+        this._life = value;
+    }
+
+    private _lost: number = 0;
+
+    public get lost(): number {
+        return this._lost;
+    }
 
     constructor(private _id: number, public grid: Grid) {
     }
