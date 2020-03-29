@@ -2,6 +2,7 @@ import {Grid} from "./grid.class";
 import {MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
 import {Cell, CellTypeEnum} from "./cell.class";
 import {OpponentSubmarine} from "./opponent-submarine.class";
+import {ICoordinate} from "./position.class";
 
 export interface ICooldown {
     torpedo: number;
@@ -203,39 +204,64 @@ export class OurSubmarine extends Submarine {
         let result: string[] = [];
         const possiblePositions = this.opponentSubmarine.getPossiblePositions();
         console.error({positions: possiblePositions.length < 10 && possiblePositions.length > 0 ? possiblePositions.map(pos => pos.coordinate) : possiblePositions.length});
+        let opponentPosition: ICoordinate;
         if (possiblePositions.length > 1) {
-            if (this.cooldown.sonar === 0 && possiblePositions.length > 20) {
-                const surfaces = Array.from((possiblePositions
-                    .reduce((acc, cur) => {
-                        const curSurface = cur.surface;
-                        const counter = (acc.get(curSurface) || 0) + 1;
-                        return acc.set(curSurface, counter);
-                    }, new Map<number, number>())).entries())
-                    .sort((a, b) => b[1] - a[1]);
-                this._sonar.surface = (surfaces.length > 1) ? surfaces[0][0] : undefined;
-                result.push(`${OrderEnum.SONAR} ${this._sonar.surface}`)
-            } else if (this.cooldown.mine === 0) {
-                result.push(`${OrderEnum.MINE} ${this._path[0].direction}`);
-                this._mines.push(this._path[1].cell);
+            const {min, max} = possiblePositions.reduce<{ min?: ICoordinate, max?: ICoordinate }>(
+                (acc, cur) => {
+                    acc.min = acc.min ? {
+                        x: Math.min(acc.min.x, cur.coordinate.x),
+                        y: Math.min(acc.min.y, cur.coordinate.y)
+                    } : cur.coordinate;
+                    acc.max = acc.max ? {
+                        x: Math.max(acc.min.x, cur.coordinate.x),
+                        y: Math.max(acc.min.y, cur.coordinate.y)
+                    } : cur.coordinate;
+                    return acc;
+                }, {}
+            );
+            if ((max.x - min.x < 4) && (max.y - min.y < 4)) {
+                opponentPosition = {x: Math.floor((min.x + max.x) / 2), y: Math.floor((min.y + max.y) / 2)}
             }
         } else if (possiblePositions.length === 1) {
-            const opponentPosition = possiblePositions[0];
+            opponentPosition = possiblePositions[0].coordinate;
+        }
+
+        if (opponentPosition) {
+            result.push(`${OrderEnum.MSG} ${opponentPosition.x}-${opponentPosition.y}`);
             console.error({opponentPosition});
-            const distanceWithOpponentPosition = this.position.pathLength(opponentPosition);
-            if (distanceWithOpponentPosition > 2 && distanceWithOpponentPosition <= 4 && this.cooldown.torpedo === 0) {
+            if (this.position.distance(opponentPosition) > 1 && this.position.distance(opponentPosition) <= 4 && this.cooldown.torpedo === 0) {
                 // TODO: Check ISLAND
                 result.push(`${OrderEnum.TORPEDO} ${opponentPosition.x} ${opponentPosition.y}`);
             } else if (this._mines.length > 0) {
-                this._mines = this._mines.filter(m => {
-                    if (opponentPosition.distance(m) <= 2 && this.position.distance(m) > 2) {
-                        result.push(`${OrderEnum.TRIGGER} ${m.x} ${m.y}`);
-                        return false;
-                    }
-                    return true;
-                });
+                let nearMines = this._mines.filter(m => m.distance(opponentPosition) <= 2);
+                if (nearMines.length > 0) {
+                    const mine = nearMines[0];
+                    console.error({mines: this._mines});
+                    this._mines = this._mines.filter(m => m.index !== mine.index);
+                    result.push(`${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`);
+                }
             }
         }
-        return []
+        if (this.cooldown.sonar === 0 && possiblePositions.length > 10 || (possiblePositions.length === 0)) {
+            const surfaces = Array.from((possiblePositions
+                .reduce((acc, cur) => {
+                    const curSurface = cur.surface;
+                    const counter = (acc.get(curSurface) || 0) + 1;
+                    return acc.set(curSurface, counter);
+                }, new Map<number, number>())).entries())
+                .sort((a, b) => b[1] - a[1]);
+            if (surfaces.length > 1) {
+                this._sonar.surface = surfaces[0][0];
+            } else {
+                this._sonar.surface = Math.floor(Math.random() * 8) + 1;
+            }
+            result.push(`${OrderEnum.SONAR} ${this._sonar.surface}`)
+        }
+        if (this.cooldown.mine === 0 && this._path[0] && this._path[0].direction) {
+            result.push(`${OrderEnum.MINE} ${this._path[0].direction}`);
+            this._mines.push(this._path[0].cell);
+        }
+        return result
     }
 
     private isAvailableStartCell(cell: Cell) {

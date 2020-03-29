@@ -1,7 +1,7 @@
 import {Grid} from "./grid.class";
 import {IMoveStrategy, MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
 import {ICoordinate} from "./position.class";
-import {Cell, CellTypeEnum} from "./cell.class";
+import {Cell} from "./cell.class";
 
 export interface IMoveOrder {
     direction: DirectionEnum;
@@ -139,46 +139,67 @@ export class OpponentSubmarine extends Submarine {
     }
 
     public getPossiblePositions(): Cell[] {
-        return this._moveScenarios
+        const possiblePositions = Cell.removeDuplicate(this._moveScenarios
             .map(
                 moveScenario => Array.from(moveScenario.paths.values()).map(positions => positions[positions.length - 1])
             )
-            .reduce((acc, cur) => [...acc, ...cur], []);
+            .reduce((acc, cur) => [...acc, ...cur], []));
+
+        if (possiblePositions.length < this._moveScenarios.length) {
+            this._startPositions = possiblePositions;
+            this._moveScenarios = [];
+        }
+
+        return possiblePositions;
     }
 
     public keepOnlyPositionsInSurface(index: number): void {
-        this._moveScenarios.forEach(
-            moveScenario => {
-                Array.from(moveScenario.paths.keys()).forEach(
-                    startPositionIndex => {
-                        const positions = moveScenario.paths.get(startPositionIndex);
-                        const lastPosition = positions[positions.length - 1];
-                        if (lastPosition.surface !== index) {
-                            moveScenario.paths.delete(startPositionIndex)
+        if (this._moveScenarios.length > 30 || this._moveScenarios.length === 0) {
+            const surface = this.grid.surfaces[index];
+            this._startPositions = surface.getAvailableCells();
+            this._moveScenarios = [this.createMoveScenario()];
+        } else {
+            this._moveScenarios.forEach(
+                moveScenario => {
+                    Array.from(moveScenario.paths.keys()).forEach(
+                        startPositionIndex => {
+                            const positions = moveScenario.paths.get(startPositionIndex);
+                            const lastPosition = positions[positions.length - 1];
+                            if (lastPosition.surface !== index) {
+                                moveScenario.paths.delete(startPositionIndex)
+                            }
                         }
-                    }
-                );
-                return moveScenario;
-            }
-        );
+                    );
+                    return moveScenario;
+                }
+            );
+        }
         this.updateMoveStrategies();
     }
 
     public excludePositionsInSurface(index: number): void {
-        this._moveScenarios.forEach(
-            moveScenario => {
-                Array.from(moveScenario.paths.keys()).forEach(
-                    startPositionIndex => {
-                        const positions = moveScenario.paths.get(startPositionIndex);
-                        const lastPosition = positions[positions.length - 1];
-                        if (lastPosition.surface === index) {
-                            moveScenario.paths.delete(startPositionIndex)
+        if (this._moveScenarios.length > 0) {
+            this._moveScenarios.forEach(
+                moveScenario => {
+                    Array.from(moveScenario.paths.keys()).forEach(
+                        startPositionIndex => {
+                            const positions = moveScenario.paths.get(startPositionIndex);
+                            const lastPosition = positions[positions.length - 1];
+                            if (lastPosition.surface === index) {
+                                moveScenario.paths.delete(startPositionIndex)
+                            }
                         }
-                    }
-                );
-                return moveScenario;
-            }
-        );
+                    );
+                    return moveScenario;
+                }
+            );
+        } else {
+            this._startPositions = this.grid.surfaces
+                .filter(surface => surface.index !== index)
+                .map(surface => surface.getAvailableCells())
+                .reduce((acc, cur) => [...acc, ...cur], []);
+            this._moveScenarios = [this.createMoveScenario()];
+        }
         this.updateMoveStrategies();
     }
 
@@ -209,6 +230,8 @@ export class OpponentSubmarine extends Submarine {
     }
 
     private applyMoveOrders() {
+        console.error({ordres: this.orders});
+
         if (this._moveScenarios.length === 0) {
             this._moveScenarios.push(this.createMoveScenario());
         }
@@ -231,19 +254,13 @@ export class OpponentSubmarine extends Submarine {
                 })
                 .reduce((acc, cur) => [...acc, ...cur], []);
             this.updateMoveStrategies();
-        } else if (this.orders.surface) {
-            this.keepOnlyPositionsInSurface(this.orders.surface.index);
-            const positions = this.getPossiblePositions();
-            if (positions.length > 0) {
-                this._startPositions = [...positions];
-            } else {
-                this._startPositions = this.grid.surfaces[this.orders.surface.index - 1].cells.filter(cell => cell.type === CellTypeEnum.SEA);
-            }
-            this._moveScenarios.forEach(moveScenario => {
-                moveScenario.moves = [];
-                moveScenario.paths.clear();
-            });
-            this._moveScenarios = [];
+        }
+
+        if (this.orders.surface) {
+            const surface = this.grid.surfaces[this.orders.surface.index - 1];
+            this._startPositions = surface.getAvailableCells();
+            this._moveScenarios = [this.createMoveScenario()];
+            this.updateMoveStrategies();
         }
     }
 
@@ -262,13 +279,6 @@ export class OpponentSubmarine extends Submarine {
                 return this._moveScenarios.some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
-        this._moveScenarios.forEach(scenario => {
-            if (scenario.paths.size > this._startPositions.length) {
-                const unexpectedIndexes = Array.from(scenario.paths.keys())
-                    .filter(key => this._startPositions.find(sp => sp.index === key));
-                unexpectedIndexes.forEach((index) => scenario.paths.delete(index))
-            }
-        });
         console.error({moveScenarios: this._moveScenarios.length});
         console.error({
             startPositions: this._startPositions.length > 0 && this._startPositions.length < 10

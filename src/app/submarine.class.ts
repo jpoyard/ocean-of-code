@@ -20,7 +20,8 @@ export enum OrderEnum {
     SONAR = 'SONAR',
     SILENCE = 'SILENCE',
     MINE = 'MINE',
-    TRIGGER = 'TRIGGER'
+    TRIGGER = 'TRIGGER',
+    MSG = 'MSG'
 }
 
 export const MOVE_STRATEGIES: IMoveStrategy[] = [
