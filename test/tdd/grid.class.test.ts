@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {Grid} from "../../src/app/grid.class";
-import {ICoordinates} from "../../src/app/position.class";
+import {ICoordinate} from "../../src/app/position.class";
 import {Surface} from "../../src/app/surface.class";
 import {GRID_SAMPLE, IGridScenario} from "./grid.mock";
 
@@ -32,7 +32,7 @@ describe(Grid.name, () => {
                 then: {x: GRID_SAMPLE[0].width - 1, y: GRID_SAMPLE[0].height - 1}
             },
         ].forEach(
-            (scenario: { given: IGridScenario, when: number, then: ICoordinates }) =>
+            (scenario: { given: IGridScenario, when: number, then: ICoordinate }) =>
                 it(`should be ${JSON.stringify(scenario.then)} when given index is ${scenario.when}`, () => {
                     // Given
                     const grid = new Grid(scenario.given.width, scenario.given.height, scenario.given.grid);
@@ -46,6 +46,10 @@ describe(Grid.name, () => {
 
     describe('getIndex()', () => {
         [
+            {given: GRID_SAMPLE[0], when: {x: -1, y: 0}, then: -1},
+            {given: GRID_SAMPLE[0], when: {x: 0, y: -1}, then: -1},
+            {given: GRID_SAMPLE[0], when: {x: GRID_SAMPLE[0].width, y: 0}, then: -1},
+            {given: GRID_SAMPLE[0], when: {x: 0, y: GRID_SAMPLE[0].height}, then: -1},
             {given: GRID_SAMPLE[0], when: {x: 0, y: 0}, then: 0},
             {given: GRID_SAMPLE[0], when: {x: GRID_SAMPLE[0].width - 1, y: 0}, then: GRID_SAMPLE[0].width - 1},
             {
@@ -59,7 +63,7 @@ describe(Grid.name, () => {
                 then: (GRID_SAMPLE[0].width * GRID_SAMPLE[0].height) - 1
             },
         ].forEach(
-            (scenario: { given: IGridScenario, when: ICoordinates, then: number }) =>
+            (scenario: { given: IGridScenario, when: ICoordinate, then: number }) =>
                 it(`should be ${(scenario.then)} when given index is ${JSON.stringify(scenario.when)}`, () => {
                     // Given
                     const grid = new Grid(scenario.given.width, scenario.given.height, scenario.given.grid);
@@ -101,7 +105,7 @@ describe(Grid.name, () => {
                 then: false
             },
         ].forEach(
-            (scenario: { given: IGridScenario, when: ICoordinates, then: boolean }) =>
+            (scenario: { given: IGridScenario, when: ICoordinate, then: boolean }) =>
                 it(`should be ${(scenario.then)} when given index is ${JSON.stringify(scenario.when)}`, () => {
                     // Given
                     const grid = new Grid(scenario.given.width, scenario.given.height, scenario.given.grid);

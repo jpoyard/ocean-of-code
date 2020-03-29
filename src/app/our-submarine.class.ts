@@ -88,8 +88,7 @@ export class OurSubmarine extends Submarine {
     }
 
     public getActions(): string[] {
-        let tmp = this.getOtherActions();
-        return [...this.getMoveActions(), ...tmp];
+        return [...this.getOtherActions(), ...this.getMoveActions()];
     }
 
     public setPosition(x: number, y: number) {
@@ -120,6 +119,49 @@ export class OurSubmarine extends Submarine {
         return result;
     }
 
+    public searchShortestPath(startCell: Cell, endCell: Cell): IPathNode[] {
+        let result: IPathNode[] = [];
+        let pathNodes: IPathNode[] = [];
+
+        if (this.grid.isAvailableCell(startCell) && !this.isVisitedCell(endCell.index) && this.grid.isAvailableCell(endCell)) {
+            pathNodes.push({cell: startCell});
+
+            let availableCells: Map<number, Cell> = this.grid.getAvailableCells()
+                .filter((c) => !this.isVisitedCell(c.index) && !startCell.equals(c))
+                .reduce((acc, cur) => acc.set(cur.index, cur), new Map<number, Cell>());
+            let maxIteration = availableCells.size * 4;
+            let iteration = 0;
+
+            do {
+                let currentPathNode = pathNodes[pathNodes.length - 1];
+
+                if (currentPathNode.paths == null && !currentPathNode.cell.equals(endCell)) {
+                    currentPathNode.paths = this.initializePath(currentPathNode, availableCells)
+                } else if (currentPathNode.cell.equals(endCell)) {
+                    currentPathNode.paths = [];
+                }
+
+                if (currentPathNode.paths.length > 0) {
+                    const newPath = currentPathNode.paths.pop();
+                    availableCells.delete(newPath.cell.index);
+                    currentPathNode.direction = newPath.direction;
+                    pathNodes.push({cell: newPath.cell});
+                } else {
+                    if (result.length === 0 || pathNodes.length <= result.length) {
+                        result = pathNodes.map(node => ({
+                            cell: node.cell,
+                            direction: node.direction
+                        }));
+                    }
+                    const path = pathNodes.pop();
+                    availableCells.set(path.cell.index, path.cell);
+                }
+                iteration++;
+            } while (pathNodes.length > 0 && iteration <= maxIteration);
+        }
+        return result;
+    }
+
     public searchLongestPath(cell: Cell): IPathNode[] {
         let result: IPathNode[] = [];
         let pathNodes: IPathNode[] = [];
@@ -138,14 +180,7 @@ export class OurSubmarine extends Submarine {
                 let currentPathNode = pathNodes[pathNodes.length - 1];
 
                 if (currentPathNode.paths == null) {
-                    currentPathNode.paths = MOVE_STRATEGIES
-                        .map(strategy => ({
-                            index: this.grid.getIndex(currentPathNode.cell.sum(strategy.move)),
-                            direction: strategy.direction
-                        }))
-                        .filter(strategy => this.grid.isIndexValid(strategy.index) && availableCells.has(strategy.index))
-                        .map(strategy => ({cell: this.grid.getCell(strategy.index), direction: strategy.direction}))
-                        .filter(strategy => strategy.cell.type === CellTypeEnum.SEA)
+                    currentPathNode.paths = this.initializePath(currentPathNode, availableCells)
                 }
 
                 if (currentPathNode.paths.length > 0) {
@@ -172,6 +207,17 @@ export class OurSubmarine extends Submarine {
 
     public setCooldown(torpedo: number, sonar: number, mine: number, silence: number) {
         this._cooldown = {torpedo, sonar, mine, silence};
+    }
+
+    private initializePath(currentPathNode: IPathNode, availableCells: Map<number, Cell>) {
+        return MOVE_STRATEGIES
+            .map(strategy => ({
+                index: this.grid.getIndex(currentPathNode.cell.sum(strategy.move)),
+                direction: strategy.direction
+            }))
+            .filter(strategy => this.grid.isIndexValid(strategy.index) && availableCells.has(strategy.index))
+            .map(strategy => ({cell: this.grid.getCell(strategy.index), direction: strategy.direction}))
+            .filter(strategy => strategy.cell.type === CellTypeEnum.SEA);
     }
 
     private getMoveActions(): string[] {
@@ -224,42 +270,82 @@ export class OurSubmarine extends Submarine {
             }
         } else if (possiblePositions.length === 1) {
             opponentPosition = possiblePositions[0].coordinate;
+            const path: IPathNode[] = (this.cooldown.torpedo === 0)
+                ? this.searchShortestPath(this.position, this.grid.getCell(this.grid.getIndex(opponentPosition)))
+                : this.searchLongestPath(this.position);
+            if (path.length > 0) {
+                this._path = path;
+            }
         }
 
         if (opponentPosition) {
             result.push(`${OrderEnum.MSG} ${opponentPosition.x}-${opponentPosition.y}`);
             console.error({opponentPosition});
-            if (this.position.distance(opponentPosition) > 1 && this.position.distance(opponentPosition) <= 4 && this.cooldown.torpedo === 0) {
+            const nextPosition = this._path.length > 1 ? this._path[1].cell : this.position;
+            if (this.cooldown.torpedo === 0 && nextPosition.distance(opponentPosition) > 1 && nextPosition.pathLength(opponentPosition) <= 4) {
                 // TODO: Check ISLAND
                 result.push(`${OrderEnum.TORPEDO} ${opponentPosition.x} ${opponentPosition.y}`);
-            } else if (this._mines.length > 0) {
-                let nearMines = this._mines.filter(m => m.distance(opponentPosition) <= 2);
+            }
+            if (this._mines.length > 0) {
+                console.error({mines: this._mines.map(m => m.coordinate)});
+                let nearMines = this._mines.filter(m => m.distance(opponentPosition) <= 1);
                 if (nearMines.length > 0) {
                     const mine = nearMines[0];
-                    console.error({mines: this._mines});
                     this._mines = this._mines.filter(m => m.index !== mine.index);
                     result.push(`${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`);
                 }
             }
         }
-        if (this.cooldown.sonar === 0 && possiblePositions.length > 10 || (possiblePositions.length === 0)) {
-            const surfaces = Array.from((possiblePositions
-                .reduce((acc, cur) => {
-                    const curSurface = cur.surface;
-                    const counter = (acc.get(curSurface) || 0) + 1;
-                    return acc.set(curSurface, counter);
-                }, new Map<number, number>())).entries())
-                .sort((a, b) => b[1] - a[1]);
-            if (surfaces.length > 1) {
-                this._sonar.surface = surfaces[0][0];
-            } else {
+        if ((this.cooldown.sonar === 0) && (possiblePositions.length > 5)) {
+            this._sonar.surface = undefined;
+            if (possiblePositions.length > 10) {
+                const surfaces = Array.from((possiblePositions
+                    .reduce((acc, cur) => {
+                        const curSurface = cur.surface;
+                        const counter = (acc.get(curSurface) || 0) + 1;
+                        return acc.set(curSurface, counter);
+                    }, new Map<number, number>())).entries())
+                    .sort((a, b) => b[1] - a[1]);
+                if (surfaces.length > 1) {
+                    this._sonar.surface = surfaces[0][0];
+                }
+            } else if (possiblePositions.length === 0) {
                 this._sonar.surface = Math.floor(Math.random() * 8) + 1;
             }
-            result.push(`${OrderEnum.SONAR} ${this._sonar.surface}`)
+
+            if (this._sonar.surface) {
+                result.push(`${OrderEnum.SONAR} ${this._sonar.surface}`)
+            }
         }
-        if (this.cooldown.mine === 0 && this._path[0] && this._path[0].direction) {
-            result.push(`${OrderEnum.MINE} ${this._path[0].direction}`);
-            this._mines.push(this._path[0].cell);
+        if (this.cooldown.mine === 0) {
+            // let nextPosition = this._path.length>1 ? this._path[1].cell : this._position;
+            let nextPosition = this._position;
+            let mineStrategies = MOVE_STRATEGIES
+                .map(moveStrategy => ({
+                    ...moveStrategy,
+                    index: this.grid.getIndex(nextPosition.sum(moveStrategy.move))
+                }))
+                .filter(moveStrategy => this.grid.isIndexValid(moveStrategy.index))
+                .map(moveStrategy => ({...moveStrategy, cell: this.grid.getCell(moveStrategy.index)}))
+                .filter(moveStrategy => this.grid.isAvailableCell(moveStrategy.cell));
+            if (mineStrategies.length > 0) {
+                if (opponentPosition) {
+                    mineStrategies = mineStrategies
+                        .map(mineStrategy => ({...mineStrategy, score: mineStrategy.cell.distance(opponentPosition)}))
+                        .sort((a, b) => b.score - a.score)
+                }
+                const mineStrategie = mineStrategies[0];
+                console.error({
+                    mine: {
+                        direction: mineStrategie.direction,
+                        cell: mineStrategie.cell.coordinate,
+                        nextPosition: nextPosition.coordinate,
+                        move: mineStrategie.move
+                    }
+                });
+                result.push(`${OrderEnum.MINE} ${mineStrategie.direction}`);
+                this._mines.push(mineStrategie.cell);
+            }
         }
         return result
     }

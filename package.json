@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "test:nyc": "jest --coverage",
-    "jest": "jest"
+    "jest": "jest",
+    "concatenate": "ts-node scripts/concatenate.ts"
   },
   "keywords": [],
   "author": "",

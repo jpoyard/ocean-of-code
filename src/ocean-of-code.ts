@@ -1,5 +1,3 @@
-const readline = () => '';
-
 enum CommandEnum {
     TORPEDO = 'TORPEDO',
     SONAR = 'SONAR',

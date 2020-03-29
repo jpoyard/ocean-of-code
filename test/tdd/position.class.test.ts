@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {ICoordinates, Position} from "../../src/app/position.class";
+import {ICoordinate, Position} from "../../src/app/position.class";
 
 describe(Position.name, () => {
     describe('static sum()', () => {
@@ -7,7 +7,7 @@ describe(Position.name, () => {
             {given: [], then: {x: 0, y: 0}},
             {given: [{x: 2, y: 1}, {x: -2, y: -1}], then: {x: 0, y: 0}},
             {given: [{x: 2, y: 1}, {x: 4, y: 1}], then: {x: 6, y: 2}},
-        ].forEach((scenario: { given: ICoordinates[], then: ICoordinates }) => {
+        ].forEach((scenario: { given: ICoordinate[], then: ICoordinate }) => {
             it(`should return ${JSON.stringify(scenario.then)} when positions are ${JSON.stringify(scenario.given)}`, () => {
                 // Given
                 // When
@@ -20,7 +20,7 @@ describe(Position.name, () => {
     describe('static multiply()', () => {
         [
             {given: {coordinates: {x: 2, y: 1}, factor: 2}, then: {x: 4, y: 2}},
-        ].forEach((scenario: { given: { coordinates: ICoordinates, factor: number }, then: ICoordinates }) => {
+        ].forEach((scenario: { given: { coordinates: ICoordinate, factor: number }, then: ICoordinate }) => {
             it(`should return ${JSON.stringify(scenario.then)} when given params are ${JSON.stringify(scenario.given)}`, () => {
                 // Given
                 // When
@@ -34,7 +34,7 @@ describe(Position.name, () => {
         [
             {given: {x: 0, y: 0}, when: {x: 1, y: 2}, then: {x: 1, y: 2}},
             {given: {x: -2, y: -1}, when: {x: 1, y: 2}, then: {x: -1, y: 1}},
-        ].forEach((scenario: { given: ICoordinates, when: ICoordinates, then: ICoordinates }) => {
+        ].forEach((scenario: { given: ICoordinate, when: ICoordinate, then: ICoordinate }) => {
             it(`should return ${JSON.stringify(scenario.then)} when position is ${JSON.stringify(scenario.given)} and param is ${JSON.stringify(scenario.when)}`, () => {
                 // Given
                 const position = new Position(scenario.given);
@@ -51,7 +51,7 @@ describe(Position.name, () => {
             {given: {x: -2, y: 1}, when: 2, then: {x: -4, y: 2}},
             {given: {x: -2, y: -1}, when: 2, then: {x: -4, y: -2}},
             {given: {x: -2, y: -1}, when: -2, then: {x: 4, y: 2}},
-        ].forEach((scenario: { given: ICoordinates, when: number, then: ICoordinates }) => {
+        ].forEach((scenario: { given: ICoordinate, when: number, then: ICoordinate }) => {
             it(`should return ${JSON.stringify(scenario.then)} when position is ${JSON.stringify(scenario.given)} and param is ${JSON.stringify(scenario.when)}`, () => {
                 // Given
                 const position = new Position(scenario.given);
@@ -65,13 +65,13 @@ describe(Position.name, () => {
     });
 
     describe('static removeDuplicate()', () => {
-        const A: ICoordinates = {x: 2, y: 1};
-        const B: ICoordinates = {x: -2, y: -1};
+        const A: ICoordinate = {x: 2, y: 1};
+        const B: ICoordinate = {x: -2, y: -1};
         [
             {given: [], then: [],},
             {given: [A, B], then: [A, B]},
             {given: [A, B, A, B, A], then: [A, B]}
-        ].forEach((scenario: { given: ICoordinates[], then: ICoordinates[] }) => {
+        ].forEach((scenario: { given: ICoordinate[], then: ICoordinate[] }) => {
             it(`should return ${JSON.stringify(scenario.then)} when positions are ${JSON.stringify(scenario.given)}`, () => {
                 // Given
                 // When
@@ -83,14 +83,14 @@ describe(Position.name, () => {
     });
 
     describe('static equals()', () => {
-        const A: ICoordinates = {x: 1, y: 2};
-        const B: ICoordinates = {x: -2, y: -1};
+        const A: ICoordinate = {x: 1, y: 2};
+        const B: ICoordinate = {x: -2, y: -1};
         [
             {given: [], then: true,},
             {given: [A], then: true},
             {given: [A, A, A, A], then: true},
             {given: [A, A, B, A], then: false}
-        ].forEach((scenario: { given: ICoordinates[], then: boolean }) => {
+        ].forEach((scenario: { given: ICoordinate[], then: boolean }) => {
             it(`should return ${(scenario.then)} when positions are ${JSON.stringify(scenario.given)}`, () => {
                 // Given
                 // When
@@ -102,13 +102,13 @@ describe(Position.name, () => {
     });
 
     describe('equals()', () => {
-        const A: ICoordinates = {x: 1, y: 2};
-        const B: ICoordinates = {x: -2, y: -1};
+        const A: ICoordinate = {x: 1, y: 2};
+        const B: ICoordinate = {x: -2, y: -1};
         [
             {given: A, when: A, then: true},
             {given: A, when: B, then: false},
             {given: B, when: A, then: false},
-        ].forEach((scenario: { given: ICoordinates, when: ICoordinates, then: boolean }) => {
+        ].forEach((scenario: { given: ICoordinate, when: ICoordinate, then: boolean }) => {
             it(`should return ${(scenario.then)} when position is ${scenario.given} and param is ${scenario.when}`, () => {
                 // Given
                 const position = new Position(scenario.given);
@@ -131,7 +131,7 @@ describe(Position.name, () => {
             {given: {a: {x: 0, y: 0}, b: {x: -1, y: 1}}, then: 1},
             {given: {a: {x: 0, y: 0}, b: {x: 0, y: 1}}, then: 1},
             {given: {a: {x: 0, y: 0}, b: {x: 1, y: 1}}, then: 1},
-        ].forEach((scenario: { given: { a: ICoordinates, b: ICoordinates }, then: number }) => {
+        ].forEach((scenario: { given: { a: ICoordinate, b: ICoordinate }, then: number }) => {
             it(`should return ${(scenario.then)} when coordinates are ${JSON.stringify(scenario.given)}`, () => {
                 // Given
                 // When
@@ -153,7 +153,7 @@ describe(Position.name, () => {
             {given: {a: {x: 0, y: 0}, b: {x: -1, y: 1}}, then: 2},
             {given: {a: {x: 0, y: 0}, b: {x: 0, y: 1}}, then: 1},
             {given: {a: {x: 0, y: 0}, b: {x: 1, y: 1}}, then: 2},
-        ].forEach((scenario: { given: { a: ICoordinates, b: ICoordinates }, then: number }) => {
+        ].forEach((scenario: { given: { a: ICoordinate, b: ICoordinate }, then: number }) => {
             it(`should return ${(scenario.then)} when coordinates are ${JSON.stringify(scenario.given)}`, () => {
                 // Given
                 // When
@@ -175,7 +175,7 @@ describe(Position.name, () => {
             {given: {x: 0, y: 0}, when: {x: -1, y: 1}, then: 1},
             {given: {x: 0, y: 0}, when: {x: 0, y: 1}, then: 1},
             {given: {x: 0, y: 0}, when: {x: 1, y: 1}, then: 1},
-        ].forEach((scenario: { given: ICoordinates, when: ICoordinates, then: number }) => {
+        ].forEach((scenario: { given: ICoordinate, when: ICoordinate, then: number }) => {
             it(`should return ${(scenario.then)} when position is ${(scenario.given)} and given param is ${(scenario.when)}`, () => {
                 // Given
                 const position = new Position(scenario.given);
@@ -198,7 +198,7 @@ describe(Position.name, () => {
             {given: {x: 0, y: 0}, when: {x: -1, y: 1}, then: 2},
             {given: {x: 0, y: 0}, when: {x: 0, y: 1}, then: 1},
             {given: {x: 0, y: 0}, when: {x: 1, y: 1}, then: 2},
-        ].forEach((scenario: { given: ICoordinates, when: ICoordinates, then: number }) => {
+        ].forEach((scenario: { given: ICoordinate, when: ICoordinate, then: number }) => {
             it(`should return ${(scenario.then)} when position is ${(scenario.given)} and given param is ${(scenario.when)}`, () => {
                 // Given
                 const position = new Position(scenario.given);
