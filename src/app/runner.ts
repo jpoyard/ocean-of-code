@@ -3,7 +3,7 @@ import {OurSubmarine} from "./our-submarine.class";
 import {OpponentSubmarine} from "./opponent-submarine.class";
 
 function log(...args){
-    // console.error(...args);
+    console.error(...args);
 }
 
 var inputs: string[] = readline().split(' ');

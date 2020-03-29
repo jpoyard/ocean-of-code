@@ -1,5 +1,5 @@
 import {Grid} from "./grid.class";
-import {IMoveStrategy, MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
+import {DirectionEnum, IMoveStrategy, MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
 import {ICoordinate} from "./position.class";
 import {Cell} from "./cell.class";
 
@@ -234,13 +234,18 @@ export class OpponentSubmarine extends Submarine {
             this._moveScenarios.forEach(moveScenario => this.addMoveStrategy(moveScenario, moveStrategy));
             this.updateMoveStrategies();
         } else if (this.orders.silence) {
+            const positions: Cell[] = this.getPossiblePositions();
+            if (positions.length < 50) {
+                this._startPositions = positions;
+                this._moveScenarios = [this.createMoveScenario()];
+            }
             this._moveScenarios = this._moveScenarios
                 .map(moveScenario => {
                     const moveScenarios: IMoveScenario[] = [];
                     MOVE_STRATEGIES.map(moveStrategy => {
                         let tmpScenario = (moveScenario);
                         for (let length = 1; length <= 4; length++) {
-                            tmpScenario =this.addMoveStrategy(OpponentSubmarine.cloneMoveScenario(tmpScenario), moveStrategy);
+                            tmpScenario = this.addMoveStrategy(OpponentSubmarine.cloneMoveScenario(tmpScenario), moveStrategy);
                             moveScenarios.push(tmpScenario);
                         }
                     });
@@ -273,6 +278,10 @@ export class OpponentSubmarine extends Submarine {
                 return this._moveScenarios.some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
+        if(this._startPositions.length===0){
+            this._startPositions = this.grid.getAvailableCells();
+            this._moveScenarios = [this.createMoveScenario()];
+        }
         log({moveScenarios: this._moveScenarios.length});
         log({
             startPositions: this._startPositions.length > 0 && this._startPositions.length < 10

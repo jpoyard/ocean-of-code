@@ -1,5 +1,5 @@
 import {Grid} from "./grid.class";
-import {MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
+import {DirectionEnum, MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
 import {Cell, CellTypeEnum} from "./cell.class";
 import {OpponentSubmarine} from "./opponent-submarine.class";
 import {ICoordinate} from "./position.class";
