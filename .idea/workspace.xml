@@ -3,17 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="7e1e79fb-e390-414d-9554-c8904d37d31e" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/concatenate.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/concatenate.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/opponent-submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/opponent-submarine.class.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/our-submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/our-submarine.class.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ocean-of-code.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/ocean-of-code.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/tdd/cell.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/cell.class.test.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/tdd/grid.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/grid.class.test.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/tdd/grid.mock.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/grid.mock.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/tdd/opponent-submarine.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/opponent-submarine.class.test.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/tdd/our-submarine.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/our-submarine.class.test.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/tdd/position.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/position.class.test.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -145,7 +136,7 @@
       <workItem from="1585052570496" duration="15569000" />
       <workItem from="1585083822445" duration="64453000" />
       <workItem from="1585351948735" duration="56111000" />
-      <workItem from="1585474369937" duration="8546000" />
+      <workItem from="1585474369937" duration="12681000" />
     </task>
     <servers />
   </component>
@@ -181,25 +172,25 @@
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
     <state x="-1181" y="293" key="FileChooserDialogImpl/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585404712034" />
-    <state width="1899" height="104" key="GridCell.Tab.0.bottom" timestamp="1585484985157">
+    <state width="1899" height="104" key="GridCell.Tab.0.bottom" timestamp="1585489278066">
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
-    <state width="1899" height="104" key="GridCell.Tab.0.bottom/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585484985157" />
+    <state width="1899" height="104" key="GridCell.Tab.0.bottom/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585489278066" />
     <state width="1493" height="155" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1585295502060" />
-    <state width="1899" height="104" key="GridCell.Tab.0.center" timestamp="1585484985157">
+    <state width="1899" height="104" key="GridCell.Tab.0.center" timestamp="1585489278066">
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
-    <state width="1899" height="104" key="GridCell.Tab.0.center/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585484985157" />
+    <state width="1899" height="104" key="GridCell.Tab.0.center/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585489278066" />
     <state width="1493" height="155" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1585295502060" />
-    <state width="1899" height="104" key="GridCell.Tab.0.left" timestamp="1585484985157">
+    <state width="1899" height="104" key="GridCell.Tab.0.left" timestamp="1585489278066">
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
-    <state width="1899" height="104" key="GridCell.Tab.0.left/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585484985157" />
+    <state width="1899" height="104" key="GridCell.Tab.0.left/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585489278066" />
     <state width="1493" height="155" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1585295502060" />
-    <state width="1899" height="104" key="GridCell.Tab.0.right" timestamp="1585484985157">
+    <state width="1899" height="104" key="GridCell.Tab.0.right" timestamp="1585489278066">
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
-    <state width="1899" height="104" key="GridCell.Tab.0.right/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585484985157" />
+    <state width="1899" height="104" key="GridCell.Tab.0.right/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585489278066" />
     <state width="1493" height="155" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1585295502060" />
     <state width="1877" height="326" key="GridCell.Tab.1.bottom" timestamp="1585408012000">
       <screen x="-1920" y="17" width="1920" height="1040" />

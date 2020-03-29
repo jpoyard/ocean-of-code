@@ -88,7 +88,8 @@ export class OurSubmarine extends Submarine {
     }
 
     public getActions(): string[] {
-        return [...this.getOtherActions(), ...this.getMoveActions()];
+        const tmp = this.getOtherActions();
+        return [...this.getMoveActions(), ...tmp];
     }
 
     public setPosition(x: number, y: number) {
@@ -278,10 +279,11 @@ export class OurSubmarine extends Submarine {
             }
         }
 
+        const nextPosition = this._path.length > 1 ? this._path[1].cell : this._position;
+
         if (opponentPosition) {
-            result.push(`${OrderEnum.MSG} ${opponentPosition.x}-${opponentPosition.y}`);
+            result.push(`${OrderEnum.MSG} LOOKOUT_${opponentPosition.x}_${opponentPosition.y}`);
             console.error({opponentPosition});
-            const nextPosition = this._path.length > 1 ? this._path[1].cell : this.position;
             if (this.cooldown.torpedo === 0 && nextPosition.distance(opponentPosition) > 1 && nextPosition.pathLength(opponentPosition) <= 4) {
                 // TODO: Check ISLAND
                 result.push(`${OrderEnum.TORPEDO} ${opponentPosition.x} ${opponentPosition.y}`);
@@ -295,7 +297,10 @@ export class OurSubmarine extends Submarine {
                     result.push(`${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`);
                 }
             }
+        } else {
+            result.push(`${OrderEnum.MSG} HUNTING_${possiblePositions.length}`);
         }
+
         if ((this.cooldown.sonar === 0) && (possiblePositions.length > 5)) {
             this._sonar.surface = undefined;
             if (possiblePositions.length > 10) {
@@ -318,8 +323,6 @@ export class OurSubmarine extends Submarine {
             }
         }
         if (this.cooldown.mine === 0) {
-            // let nextPosition = this._path.length>1 ? this._path[1].cell : this._position;
-            let nextPosition = this._position;
             let mineStrategies = MOVE_STRATEGIES
                 .map(moveStrategy => ({
                     ...moveStrategy,

@@ -114,7 +114,7 @@ export class OpponentSubmarine extends Submarine {
         return ORDER_PARSER_STRATEGIES
             .reduce(
                 (acc, cur) => {
-                    const order = orders.find(i => i.includes(cur.order));
+                    const order = orders.find(i => i.startsWith(cur.order));
                     if (order) {
                         acc = {...acc, ...cur.parse(order)};
                     }
@@ -139,18 +139,11 @@ export class OpponentSubmarine extends Submarine {
     }
 
     public getPossiblePositions(): Cell[] {
-        const possiblePositions = Cell.removeDuplicate(this._moveScenarios
+        return Cell.removeDuplicate(this._moveScenarios
             .map(
                 moveScenario => Array.from(moveScenario.paths.values()).map(positions => positions[positions.length - 1])
             )
             .reduce((acc, cur) => [...acc, ...cur], []));
-
-        if (possiblePositions.length < this._moveScenarios.length) {
-            this._startPositions = possiblePositions;
-            this._moveScenarios = [];
-        }
-
-        return possiblePositions;
     }
 
     public keepOnlyPositionsInSurface(index: number): void {
@@ -212,7 +205,7 @@ export class OpponentSubmarine extends Submarine {
         };
     }
 
-    private addMoveStrategy(moveScenario: IMoveScenario, moveStrategy: IMoveStrategy): void {
+    private addMoveStrategy(moveScenario: IMoveScenario, moveStrategy: IMoveStrategy): IMoveScenario {
         moveScenario.moves.push(moveStrategy);
         this._startPositions.forEach(startPosition => {
             if (moveScenario.paths.has(startPosition.index)) {
@@ -227,6 +220,7 @@ export class OpponentSubmarine extends Submarine {
                 }
             }
         });
+        return moveScenario;
     }
 
     private applyMoveOrders() {
@@ -244,10 +238,10 @@ export class OpponentSubmarine extends Submarine {
                 .map(moveScenario => {
                     const moveScenarios: IMoveScenario[] = [];
                     MOVE_STRATEGIES.map(moveStrategy => {
+                        let tmpScenario = (moveScenario);
                         for (let length = 1; length <= 4; length++) {
-                            const newMoveScenario = OpponentSubmarine.cloneMoveScenario(moveScenario);
-                            this.addMoveStrategy(newMoveScenario, moveStrategy);
-                            moveScenarios.push(newMoveScenario);
+                            tmpScenario =this.addMoveStrategy(OpponentSubmarine.cloneMoveScenario(tmpScenario), moveStrategy);
+                            moveScenarios.push(tmpScenario);
                         }
                     });
                     return moveScenarios;
