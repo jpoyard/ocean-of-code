@@ -2,7 +2,6 @@ import {Grid} from "./grid.class";
 import {IMoveStrategy, MOVE_STRATEGIES, OrderEnum, Submarine} from "./submarine.class";
 import {ICoordinate} from "./position.class";
 import {Cell, CellTypeEnum} from "./cell.class";
-import {start} from "repl";
 
 export interface IMoveOrder {
     direction: DirectionEnum;
@@ -126,7 +125,10 @@ export class OpponentSubmarine extends Submarine {
     private static cloneMoveScenario(moveScenario: IMoveScenario): IMoveScenario {
         return {
             moves: [...moveScenario.moves],
-            paths: new Map(Array.from(moveScenario.paths.entries()).map(entry => [entry[0], [...entry[1]]]))
+            // paths: new Map(moveScenario.paths)
+            paths: Array.from(moveScenario.paths.values())
+                .reduce((acc, cur) =>
+                    acc.set(cur[0].index, [...cur]), new Map<number, Cell[]>())
         };
     }
 
@@ -155,7 +157,7 @@ export class OpponentSubmarine extends Submarine {
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
-                )
+                );
                 return moveScenario;
             }
         );
@@ -173,7 +175,7 @@ export class OpponentSubmarine extends Submarine {
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
-                )
+                );
                 return moveScenario;
             }
         );
@@ -246,15 +248,15 @@ export class OpponentSubmarine extends Submarine {
     }
 
     private applyOtherOrders(): void {
-        // TODO: Torpedo: to filter path
+        if (this.orders.torpedo) {
+            this.keepOnlyPositionsNearTorpedo(this.orders.torpedo.coordinate);
+        }
     }
 
     private updateMoveStrategies(): void {
-        console.error({scenario: this._moveScenarios.length, startPositions: this._startPositions.length});
         this._moveScenarios = this._moveScenarios.filter(
             scenario => scenario.paths.size > 0
         );
-        console.error({scenario: this._moveScenarios.length});
         this._startPositions = this._startPositions.filter(
             startPosition => {
                 return this._moveScenarios.some(moveScenario => moveScenario.paths.has(startPosition.index))
@@ -264,9 +266,31 @@ export class OpponentSubmarine extends Submarine {
             if (scenario.paths.size > this._startPositions.length) {
                 const unexpectedIndexes = Array.from(scenario.paths.keys())
                     .filter(key => this._startPositions.find(sp => sp.index === key));
-                unexpectedIndexes.forEach((index)=>scenario.paths.delete(index))
+                unexpectedIndexes.forEach((index) => scenario.paths.delete(index))
             }
         });
-        console.error({startPositions: this._startPositions.length});
+        console.error({moveScenarios: this._moveScenarios.length});
+        console.error({
+            startPositions: this._startPositions.length > 0 && this._startPositions.length < 10
+                ? this._startPositions.map(p => p.coordinate) : this._startPositions.length
+        })
+    }
+
+    private keepOnlyPositionsNearTorpedo(coordinate: ICoordinate) {
+        this._moveScenarios.forEach(
+            moveScenario => {
+                Array.from(moveScenario.paths.keys()).forEach(
+                    startPositionIndex => {
+                        const positions = moveScenario.paths.get(startPositionIndex);
+                        const lastPosition = positions[positions.length - 1];
+                        if (lastPosition.pathLength(coordinate) > 4) {
+                            moveScenario.paths.delete(startPositionIndex)
+                        }
+                    }
+                );
+                return moveScenario;
+            }
+        );
+        this.updateMoveStrategies();
     }
 }

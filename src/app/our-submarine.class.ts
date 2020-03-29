@@ -38,6 +38,7 @@ export class OurSubmarine extends Submarine {
     private _sonar: ISonar = {
         result: SonarResultEnum.NONE
     };
+    private _mines: Cell[] = [];
 
     constructor(id: number, grid: Grid, public opponentSubmarine: OpponentSubmarine) {
         super(id, grid);
@@ -86,7 +87,8 @@ export class OurSubmarine extends Submarine {
     }
 
     public getActions(): string[] {
-        return [...this.getMoveActions(), ...this.getOtherActions()];
+        let tmp = this.getOtherActions();
+        return [...this.getMoveActions(), ...tmp];
     }
 
     public setPosition(x: number, y: number) {
@@ -112,7 +114,7 @@ export class OurSubmarine extends Submarine {
             .filter((cell) => this.isAvailableStartCell(cell));
         const result = availableStartCells
             .map(position => ({position, path: this.searchLongestPath(position)}))
-            .sort((a, b) => b.path.length - a.path.length)[0]
+            .sort((a, b) => b.path.length - a.path.length)[0];
         this._path = result.path;
         return result;
     }
@@ -199,7 +201,40 @@ export class OurSubmarine extends Submarine {
 
     private getOtherActions(): string[] {
         let result: string[] = [];
-        console.error(this.opponentSubmarine.getPossiblePositions().length);
+        const possiblePositions = this.opponentSubmarine.getPossiblePositions();
+        console.error({positions: possiblePositions.length < 10 && possiblePositions.length > 0 ? possiblePositions.map(pos => pos.coordinate) : possiblePositions.length});
+        if (possiblePositions.length > 1) {
+            if (this.cooldown.sonar === 0 && possiblePositions.length > 20) {
+                const surfaces = Array.from((possiblePositions
+                    .reduce((acc, cur) => {
+                        const curSurface = cur.surface;
+                        const counter = (acc.get(curSurface) || 0) + 1;
+                        return acc.set(curSurface, counter);
+                    }, new Map<number, number>())).entries())
+                    .sort((a, b) => b[1] - a[1]);
+                this._sonar.surface = (surfaces.length > 1) ? surfaces[0][0] : undefined;
+                result.push(`${OrderEnum.SONAR} ${this._sonar.surface}`)
+            } else if (this.cooldown.mine === 0) {
+                result.push(`${OrderEnum.MINE} ${this._path[0].direction}`);
+                this._mines.push(this._path[1].cell);
+            }
+        } else if (possiblePositions.length === 1) {
+            const opponentPosition = possiblePositions[0];
+            console.error({opponentPosition});
+            const distanceWithOpponentPosition = this.position.pathLength(opponentPosition);
+            if (distanceWithOpponentPosition > 2 && distanceWithOpponentPosition <= 4 && this.cooldown.torpedo === 0) {
+                // TODO: Check ISLAND
+                result.push(`${OrderEnum.TORPEDO} ${opponentPosition.x} ${opponentPosition.y}`);
+            } else if (this._mines.length > 0) {
+                this._mines = this._mines.filter(m => {
+                    if (opponentPosition.distance(m) <= 2 && this.position.distance(m) > 2) {
+                        result.push(`${OrderEnum.TRIGGER} ${m.x} ${m.y}`);
+                        return false;
+                    }
+                    return true;
+                });
+            }
+        }
         return []
     }
 
