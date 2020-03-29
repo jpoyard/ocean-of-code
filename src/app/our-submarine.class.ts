@@ -250,7 +250,7 @@ export class OurSubmarine extends Submarine {
     private getOtherActions(): string[] {
         let result: string[] = [];
         const possiblePositions = this.opponentSubmarine.getPossiblePositions();
-        console.error({positions: possiblePositions.length < 10 && possiblePositions.length > 0 ? possiblePositions.map(pos => pos.coordinate) : possiblePositions.length});
+        log({positions: possiblePositions.length < 10 && possiblePositions.length > 0 ? possiblePositions.map(pos => pos.coordinate) : possiblePositions.length});
         let opponentPosition: ICoordinate;
         if (possiblePositions.length > 1) {
             const {min, max} = possiblePositions.reduce<{ min?: ICoordinate, max?: ICoordinate }>(
@@ -283,13 +283,13 @@ export class OurSubmarine extends Submarine {
 
         if (opponentPosition) {
             result.push(`${OrderEnum.MSG} LOOKOUT_${opponentPosition.x}_${opponentPosition.y}`);
-            console.error({opponentPosition});
+            log({opponentPosition});
             if (this.cooldown.torpedo === 0 && nextPosition.distance(opponentPosition) > 1 && nextPosition.pathLength(opponentPosition) <= 4) {
                 // TODO: Check ISLAND
                 result.push(`${OrderEnum.TORPEDO} ${opponentPosition.x} ${opponentPosition.y}`);
             }
             if (this._mines.length > 0) {
-                console.error({mines: this._mines.map(m => m.coordinate)});
+                log({mines: this._mines.map(m => m.coordinate)});
                 let nearMines = this._mines.filter(m => m.distance(opponentPosition) <= 1);
                 if (nearMines.length > 0) {
                     const mine = nearMines[0];
@@ -338,7 +338,7 @@ export class OurSubmarine extends Submarine {
                         .sort((a, b) => b.score - a.score)
                 }
                 const mineStrategie = mineStrategies[0];
-                console.error({
+                log({
                     mine: {
                         direction: mineStrategie.direction,
                         cell: mineStrategie.cell.coordinate,

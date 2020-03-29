@@ -1,6 +1,10 @@
 import {Grid} from "./grid.class";
-import {ICooldown, OurSubmarine} from "./our-submarine.class";
+import {OurSubmarine} from "./our-submarine.class";
 import {OpponentSubmarine} from "./opponent-submarine.class";
+
+function log(...args){
+    // console.error(...args);
+}
 
 var inputs: string[] = readline().split(' ');
 const width: number = parseInt(inputs[0]);
@@ -33,3 +37,4 @@ while (true) {
 
     console.log(ourSubmarine.getActions().join('|'));
 }
+

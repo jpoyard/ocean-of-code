@@ -224,7 +224,7 @@ export class OpponentSubmarine extends Submarine {
     }
 
     private applyMoveOrders() {
-        console.error({ordres: this.orders});
+        log({ordres: this.orders});
 
         if (this._moveScenarios.length === 0) {
             this._moveScenarios.push(this.createMoveScenario());
@@ -273,8 +273,8 @@ export class OpponentSubmarine extends Submarine {
                 return this._moveScenarios.some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
-        console.error({moveScenarios: this._moveScenarios.length});
-        console.error({
+        log({moveScenarios: this._moveScenarios.length});
+        log({
             startPositions: this._startPositions.length > 0 && this._startPositions.length < 10
                 ? this._startPositions.map(p => p.coordinate) : this._startPositions.length
         })
