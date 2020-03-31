@@ -3,7 +3,8 @@ import {ICoordinate} from "./position.class";
 
 export interface IMoveStrategy {
     move: ICoordinate;
-    direction: DirectionEnum
+    direction: DirectionEnum,
+    rand: number;
 }
 
 export enum DirectionEnum {
@@ -29,10 +30,15 @@ export const MOVE_STRATEGIES: IMoveStrategy[] = [
     {move: {x: 1, y: 0}, direction: DirectionEnum.EST},
     {move: {x: 0, y: 1}, direction: DirectionEnum.SOUTH},
     {move: {x: -1, y: 0}, direction: DirectionEnum.WEST}
-];
+]
+    .map(moveStrategy => ({...moveStrategy, rand: Math.floor(Math.random() * 10)}))
+    .sort((a, b) => a.rand - b.rand);
 
 
 export class Submarine {
+    constructor(private _id: number, public grid: Grid) {
+    }
+
     private _life: number = 6;
 
     public set life(value: number) {
@@ -44,8 +50,5 @@ export class Submarine {
 
     public get lost(): number {
         return this._lost;
-    }
-
-    constructor(private _id: number, public grid: Grid) {
     }
 }
