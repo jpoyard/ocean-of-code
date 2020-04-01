@@ -35,6 +35,8 @@ while (true) {
     opponentSubmarine.life = parseInt(inputs[3]);
     opponentSubmarine.setOrders(readline().split('|'));
 
-    console.log(ourSubmarine.getActions().join('|'));
+    console.log(ourSubmarine.getActions()
+        .sort((a, b) => a.priority - b.priority)
+        .map(a => a.order).join('|'));
 }
 

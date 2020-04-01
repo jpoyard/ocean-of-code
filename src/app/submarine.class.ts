@@ -25,7 +25,7 @@ export enum OrderEnum {
     MSG = 'MSG'
 }
 
-export const MOVE_STRATEGIES: IMoveStrategy[] = [
+export const MOVE_STRATEGIES_CLOCKWISE: IMoveStrategy[] = [
     {move: {x: 0, y: -1}, direction: DirectionEnum.NORTH},
     {move: {x: 1, y: 0}, direction: DirectionEnum.EST},
     {move: {x: 0, y: 1}, direction: DirectionEnum.SOUTH},
@@ -34,8 +34,11 @@ export const MOVE_STRATEGIES: IMoveStrategy[] = [
     .map(moveStrategy => ({...moveStrategy, rand: Math.floor(Math.random() * 10)}))
     .sort((a, b) => a.rand - b.rand);
 
+export const MOVE_STRATEGIES_ANTICLOCKWISE: IMoveStrategy[] = MOVE_STRATEGIES_CLOCKWISE.reverse();
 
 export class Submarine {
+    private _isClockwise = false;
+
     constructor(private _id: number, public grid: Grid) {
     }
 
@@ -50,5 +53,13 @@ export class Submarine {
 
     public get lost(): number {
         return this._lost;
+    }
+
+    protected getStrategies(): IMoveStrategy[] {
+        if(this._isClockwise){
+            return MOVE_STRATEGIES_CLOCKWISE;
+        } else {
+            return MOVE_STRATEGIES_ANTICLOCKWISE;
+        }
     }
 }

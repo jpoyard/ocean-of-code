@@ -1,8 +1,8 @@
-import {IOrders} from "./opponent-submarine.class";
 import {Cell} from "./cell.class";
 import {Grid} from "./grid.class";
 import {ICoordinate} from "./position.class";
-import {IMoveStrategy, MOVE_STRATEGIES} from "./submarine.class";
+import {IMoveStrategy, MOVE_STRATEGIES_CLOCKWISE, OrderEnum} from "./submarine.class";
+import {IMoveOrder, IOrder, ISurfaceOrder, ITorpedoOrder} from "./opponent-submarine.class";
 
 export interface IPathScenario {
     index: number;
@@ -11,7 +11,6 @@ export interface IPathScenario {
 }
 
 export interface IMoveScenario {
-    // moves: IMoveStrategy[];
     paths: Map<number, IPathScenario>;
 }
 
@@ -52,46 +51,49 @@ export class PathResolver {
         }
     }
 
-    public applyMoveOrders(orders: IOrders) {
+    public applyMoveOrders(orders: IOrder[]) {
         log({orders: orders});
 
         if (this._moveScenarios.length === 0) {
             this._moveScenarios.push(this.createMoveScenario());
         }
-        if (orders.move) {
-            const moveStrategy = MOVE_STRATEGIES.find(strategy => strategy.direction === orders.move.direction);
-            this._moveScenarios.forEach(moveScenario => this.addMoveStrategy(moveScenario, moveStrategy));
-            this.updateMoveStrategies();
-        } else if (orders.silence) {
-            /**
-             const positions: Cell[] = this.getPossiblePositions();
-             if (this._moveScenarios.length > 300) {
-                this._startPositions = positions;
-                this._moveScenarios = [this.createMoveScenario()];
-            }**/
-            this._moveScenarios = this._moveScenarios
-                .map(moveScenario => {
-                    const moveScenarios: IMoveScenario[] = [];
-                    moveScenarios.push(moveScenario); // silence 0
-                    MOVE_STRATEGIES.map(moveStrategy => {
-                        let tmpScenario = (moveScenario);
-                        for (let length = 1; length <= 4; length++) {
-                            tmpScenario = this.addMoveStrategy(PathResolver.cloneMoveScenario(tmpScenario), moveStrategy);
-                            moveScenarios.push(tmpScenario);
-                        }
-                    });
-                    return moveScenarios;
-                })
-                .reduce((acc, cur) => [...acc, ...cur], []);
-            this.updateMoveStrategies();
-        }
 
-        if (orders.surface) {
-            const surface = this.grid.surfaces[orders.surface.index - 1];
-            this._startPositions = this.getPossiblePositions();
-            this._moveScenarios = [this.createMoveScenario()];
-            this.updateMoveStrategies();
-        }
+        orders.forEach(order => {
+            switch (order.type) {
+                case OrderEnum.MOVE:
+                    const moveStrategy = MOVE_STRATEGIES_CLOCKWISE
+                        .find(strategy => strategy.direction === ((order.order as IMoveOrder).direction));
+                    this._moveScenarios.forEach(moveScenario => this.addMoveStrategy(moveScenario, moveStrategy));
+                    this.updateMoveStrategies();
+                    break;
+                case OrderEnum.SILENCE:
+                    this._moveScenarios = this._moveScenarios
+                        .map(moveScenario => {
+                            const moveScenarios: IMoveScenario[] = [];
+                            moveScenarios.push(moveScenario); // silence 0
+                            MOVE_STRATEGIES_CLOCKWISE.map(moveStrategy => {
+                                let tmpScenario = (moveScenario);
+                                for (let length = 1; length <= 4; length++) {
+                                    tmpScenario = this.addMoveStrategy(PathResolver.cloneMoveScenario(tmpScenario), moveStrategy);
+                                    moveScenarios.push(tmpScenario);
+                                }
+                            });
+                            return moveScenarios;
+                        })
+                        .reduce((acc, cur) => [...acc, ...cur], []);
+                    this.updateMoveStrategies();
+                    break;
+                case OrderEnum.TORPEDO:
+                    this.keepOnlyPositionsNearTorpedo((order.order as ITorpedoOrder).coordinate);
+                    break;
+                case OrderEnum.SURFACE:
+                    this._startPositions = this.getPossiblePositions()
+                        .filter(c => c.surface === (order.order as ISurfaceOrder).index);
+                    this._moveScenarios = [this.createMoveScenario()];
+                    this.updateMoveStrategies();
+                    break;
+            }
+        });
     }
 
     public getPossiblePositions(): Cell[] {
@@ -229,9 +231,6 @@ export class PathResolver {
                     pathScenario.position = cell;
                     pathScenario.visitedCells.push(pathScenario.position);
                 } else {
-                    if(cell){
-                        log('remove move', cell.coordinate, cell.type);
-                    }
                     moveScenario.paths.delete(startPosition.index);
                 }
             }
@@ -240,12 +239,14 @@ export class PathResolver {
     }
 
     private updateMoveStrategies(): void {
+        const positions = this.getPossiblePositions();
         this._moveScenarios = this._moveScenarios.filter(
             scenario => scenario.paths.size > 0
         );
         this._startPositions = this._startPositions.filter(
             startPosition => {
-                return this._moveScenarios.some(moveScenario => moveScenario.paths.has(startPosition.index))
+                return this._moveScenarios
+                    .some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
         /**
@@ -256,7 +257,7 @@ export class PathResolver {
          **/
         log({moveScenarios: this._moveScenarios.length});
         /**
-        log({
+         log({
             startPositions: this._startPositions.length > 0 && this._startPositions.length < 10
                 ? this._startPositions.map(p => p.coordinate) : this._startPositions.length
         })

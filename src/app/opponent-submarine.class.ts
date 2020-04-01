@@ -29,34 +29,42 @@ export interface ITriggerOrder {
     coordinate: ICoordinate;
 }
 
-export interface IOrders {
-    move?: IMoveOrder,
-    surface?: ISurfaceOrder,
-    torpedo?: ITorpedoOrder,
-    sonar?: ISonarOrder;
-    silence?: ISilenceOrder;
-    mine?: IMineOrder;
-    trigger?: ITriggerOrder;
+export type Order =
+    IMoveOrder
+    | ISurfaceOrder
+    | ITorpedoOrder
+    | ISonarOrder
+    | ISilenceOrder
+    | IMineOrder
+    | ITriggerOrder;
+
+export interface IOrder {
+    type: OrderEnum;
+    order: Order;
 }
 
 export interface IOrderParserStrategy {
     order: OrderEnum,
-    parse: (order: string) => Partial<IOrders>
+    parse: (order: string) => IOrder
 }
 
 export const ORDER_PARSER_STRATEGIES: IOrderParserStrategy[] = [
     {
         order: OrderEnum.MOVE,
-        parse: (order) => ({move: {direction: order.split(' ')[1]} as IMoveOrder})
+        parse: (order) => ({type: OrderEnum.MOVE, order: {direction: order.split(' ')[1]} as IMoveOrder})
     }, {
         order: OrderEnum.SURFACE,
-        parse: (order) => ({surface: {index: parseInt(order.split(' ')[1])} as ISurfaceOrder})
+        parse: (order) => ({
+            type: OrderEnum.SURFACE,
+            order: {index: parseInt(order.split(' ')[1])} as ISurfaceOrder
+        })
     }, {
         order: OrderEnum.TORPEDO,
         parse: (order) => {
             let dividedOrder = order.split(' ');
             return {
-                torpedo: {
+                type: OrderEnum.TORPEDO,
+                order: {
                     coordinate: {
                         x: parseInt(dividedOrder[1]),
                         y: parseInt(dividedOrder[2])
@@ -66,19 +74,30 @@ export const ORDER_PARSER_STRATEGIES: IOrderParserStrategy[] = [
         }
     }, {
         order: OrderEnum.SONAR,
-        parse: (order) => ({sonar: {index: parseInt(order.split(' ')[1])} as ISonarOrder})
+        parse: (order) => ({
+                type: OrderEnum.SONAR,
+                order: {index: parseInt(order.split(' ')[1])} as ISonarOrder
+            }
+        )
     }, {
         order: OrderEnum.SILENCE,
-        parse: (order) => ({silence: {} as ISilenceOrder})
+        parse: (order) => ({
+            type: OrderEnum.SILENCE,
+            order: {} as ISilenceOrder
+        })
     }, {
         order: OrderEnum.MINE,
-        parse: (order) => ({mine: {} as IMineOrder})
+        parse: (order) => ({
+            type: OrderEnum.MINE,
+            order: {} as IMineOrder
+        })
     }, {
         order: OrderEnum.TRIGGER,
         parse: (order) => {
             let dividedOrder = order.split(' ');
             return {
-                trigger: {
+                type: OrderEnum.TRIGGER,
+                order: {
                     coordinate: {
                         x: parseInt(dividedOrder[1]),
                         y: parseInt(dividedOrder[2])
@@ -98,33 +117,23 @@ export class OpponentSubmarine extends Submarine {
         this.pathResover = new PathResolver(grid);
     }
 
-    private _orders: IOrders;
+    private _orders: IOrder[];
 
-    public get orders(): IOrders {
-        return {...this._orders};
+    public get orders(): IOrder[] {
+        return [...this._orders];
     }
 
-    public static parse(orders: string[]): IOrders {
-        return ORDER_PARSER_STRATEGIES
-            .reduce(
-                (acc, cur) => {
-                    const order = orders.find(i => i.startsWith(cur.order));
-                    if (order) {
-                        acc = {...acc, ...cur.parse(order)};
-                    }
-                    return acc;
-                }, {})
+    public static parse(orders: string[]): IOrder[] {
+        return orders.reduce((acc, order) => {
+            const orderStrategy = ORDER_PARSER_STRATEGIES.find(s => order.startsWith(s.order));
+            if (orderStrategy) {
+                acc.push(orderStrategy.parse(order))
+            }
+            return acc;
+        }, [])
     }
 
     public setOrders(orders: string[]) {
         this.pathResover.applyMoveOrders(OpponentSubmarine.parse(orders));
-        this.applyOtherOrders();
     }
-
-    private applyOtherOrders(): void {
-        if (this.orders.torpedo) {
-            this.pathResover.keepOnlyPositionsNearTorpedo(this.orders.torpedo.coordinate);
-        }
-    }
-
 }
