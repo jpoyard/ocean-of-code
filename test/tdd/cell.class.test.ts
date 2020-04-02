@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {ICoordinate} from "../../src/app/position.class";
-import {Cell, CellTypeEnum} from "../../src/app/cell.class";
+import {ICoordinate} from "../../src/app/services/position.class";
+import {Cell, CellTypeEnum} from "../../src/app/services/cell.class";
 
 describe(Cell.name, () => {
     describe('constructor()', () => {

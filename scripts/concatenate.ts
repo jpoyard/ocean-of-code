@@ -13,7 +13,7 @@ const FILES_NAMES: string[] = [
     'runner.ts'
 ];
 
-const SOURCE_PATH = './src/app';
+const SOURCE_PATH = './src/app/services';
 const TARGET_PATH = './dist';
 const TARGET_FILE_NAME = 'codingGame.ts';
 const TARGET_FILE = `${TARGET_PATH}/${TARGET_FILE_NAME}`;

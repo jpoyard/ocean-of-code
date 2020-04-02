@@ -330,13 +330,13 @@ export class OurSubmarine extends Submarine {
         }
 
         if (this.opponentPosition) {
-            const target = (this.cooldown.torpedo === 0)
-                ? this.grid.getCell(this.grid.getIndex(this.opponentPosition))
-                : this.grid.getCell(this.grid.getIndex(this.grid.getOppositeCoordinate(this.opponentPosition)));
-            const path = this.searchShortestPath(this.position, target);
-            if (path.length > 0) {
-                this._path = path;
-            }
+            // const target = (this.cooldown.torpedo === 0)
+            //     ? this.grid.getCell(this.grid.getIndex(this.opponentPosition))
+            //     : this.grid.getCell(this.grid.getIndex(this.grid.getOppositeCoordinate(this.opponentPosition)));
+            // const path = this.searchShortestPath(this.position, target);
+            // if (path.length > 0) {
+            //     this._path = path;
+            // }
             result.push({
                 priority: 3,
                 order: `${OrderEnum.MSG} LOOKOUT: (${this.opponentPosition.x},${this.opponentPosition.y})`

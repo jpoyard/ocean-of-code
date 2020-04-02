@@ -2,12 +2,31 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7e1e79fb-e390-414d-9554-c8904d37d31e" name="Default Changelist" comment="Deduce positions from previous attack">
+      <change afterPath="$PROJECT_DIR$/src/app/GRID_PROPERTIES.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/app/services/index.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/index.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/opponent-submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/opponent-submarine.class.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/our-submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/our-submarine.class.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/path-resolver.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/path-resolver.class.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/runner.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/runner.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/submarine.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/concatenate.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/concatenate.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/cell-container.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/cell-container.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/cell.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/cell.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/grid.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/grid.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/opponent-submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/opponent-submarine.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/our-submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/our-submarine.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/path-resolver.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/path-resolver.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/position.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/position.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/runner.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/runner.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/submarine.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/submarine.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/surface.class.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/services/surface.class.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.d.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/tdd/cell.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/cell.class.test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/tdd/grid.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/grid.class.test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/tdd/opponent-submarine.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/opponent-submarine.class.test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/tdd/our-submarine.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/our-submarine.class.test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/tdd/position.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/position.class.test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/tdd/surface.class.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/test/tdd/surface.class.test.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,20 +64,21 @@
     <property name="nodejs.jest.jest_package" value="$PROJECT_DIR$/node_modules/jest" />
     <property name="nodejs.mocha.mocha_node_package_dir" value="$PROJECT_DIR$/node_modules/mocha" />
     <property name="nodejs_package_manager_path" value="npm" />
+    <property name="restartRequiresConfirmation" value="false" />
     <property name="ts.external.directory.path" value="C:\Users\jpoyard\workspace\oceanOfCode\node_modules\typescript\lib" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/../katas/package.json" />
   </component>
   <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\jpoyard\workspace\oceanOfCode\src" />
+    </key>
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\jpoyard\workspace\oceanOfCode\test\tdd" />
       <recent name="C:\Users\jpoyard\workspace\oceanOfCode\src\app" />
       <recent name="C:\Users\jpoyard\workspace\oceanOfCode\test" />
     </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\jpoyard\workspace\oceanOfCode\src" />
-    </key>
   </component>
-  <component name="RunManager" selected="npm.concatenate">
+  <component name="RunManager" selected="npm.start">
     <configuration name="JEST" type="JavaScriptTestRunnerJest">
       <node-interpreter value="project" />
       <node-options value="" />
@@ -69,11 +89,11 @@
       <scope-kind value="ALL" />
       <method v="2" />
     </configuration>
-    <configuration name="concatenate" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+    <configuration name="start" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
       <scripts>
-        <script value="concatenate" />
+        <script value="start" />
       </scripts>
       <node-interpreter value="project" />
       <envs />
@@ -116,11 +136,11 @@
       <item itemvalue="Mocha.test" />
       <item itemvalue="npm.test" />
       <item itemvalue="npm.test:nyc" />
-      <item itemvalue="npm.concatenate" />
+      <item itemvalue="npm.start" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="npm.concatenate" />
+        <item itemvalue="npm.start" />
         <item itemvalue="npm.test" />
         <item itemvalue="npm.test:nyc" />
       </list>
@@ -143,7 +163,9 @@
       <workItem from="1585647160126" duration="10464000" />
       <workItem from="1585681960243" duration="144000" />
       <workItem from="1585682125181" duration="10358000" />
-      <workItem from="1585768814012" duration="11772000" />
+      <workItem from="1585768814012" duration="12509000" />
+      <workItem from="1585810013391" duration="329000" />
+      <workItem from="1585851598795" duration="5555000" />
     </task>
     <task id="LOCAL-00001" summary="Deduce positions from previous attack">
       <created>1585501853263</created>
@@ -167,10 +189,11 @@
     <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="-1506" y="193" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1585416735973">
-      <screen x="-1920" y="17" width="1920" height="1040" />
+    <state x="331" y="137" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1585854025823">
+      <screen x="0" y="0" width="1536" height="824" />
     </state>
     <state x="-1506" y="193" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585416735973" />
+    <state x="331" y="137" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.824@0.0.1536.824" timestamp="1585854025823" />
     <state x="-1828" y="109" width="1736" height="856" key="#com.intellij.execution.junit2.states.ComparisonFailureState$DiffDialog" timestamp="1585350849634">
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
@@ -205,30 +228,34 @@
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>
     <state x="-1181" y="293" key="FileChooserDialogImpl/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585404712034" />
-    <state width="1515" height="139" key="GridCell.Tab.0.bottom" timestamp="1585780627941">
+    <state width="1515" height="135" key="GridCell.Tab.0.bottom" timestamp="1585856446592">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
+    <state width="1515" height="139" key="GridCell.Tab.0.bottom/0.0.1536.824/-1920.0.1920.1040@0.0.1536.824" timestamp="1585810342445" />
     <state width="1899" height="123" key="GridCell.Tab.0.bottom/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585659945803" />
     <state width="1899" height="104" key="GridCell.Tab.0.bottom/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@0.0.1536.824" timestamp="1585581327081" />
-    <state width="1515" height="139" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1585780627941" />
-    <state width="1515" height="139" key="GridCell.Tab.0.center" timestamp="1585780627941">
+    <state width="1515" height="135" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1585856446592" />
+    <state width="1515" height="135" key="GridCell.Tab.0.center" timestamp="1585856446592">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
+    <state width="1515" height="139" key="GridCell.Tab.0.center/0.0.1536.824/-1920.0.1920.1040@0.0.1536.824" timestamp="1585810342445" />
     <state width="1899" height="123" key="GridCell.Tab.0.center/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585659945803" />
     <state width="1899" height="104" key="GridCell.Tab.0.center/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@0.0.1536.824" timestamp="1585581327081" />
-    <state width="1515" height="139" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1585780627941" />
-    <state width="1515" height="139" key="GridCell.Tab.0.left" timestamp="1585780627941">
+    <state width="1515" height="135" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1585856446592" />
+    <state width="1515" height="135" key="GridCell.Tab.0.left" timestamp="1585856446592">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
+    <state width="1515" height="139" key="GridCell.Tab.0.left/0.0.1536.824/-1920.0.1920.1040@0.0.1536.824" timestamp="1585810342445" />
     <state width="1899" height="123" key="GridCell.Tab.0.left/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585659945803" />
     <state width="1899" height="104" key="GridCell.Tab.0.left/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@0.0.1536.824" timestamp="1585581327081" />
-    <state width="1515" height="139" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1585780627941" />
-    <state width="1515" height="139" key="GridCell.Tab.0.right" timestamp="1585780627941">
+    <state width="1515" height="135" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1585856446592" />
+    <state width="1515" height="135" key="GridCell.Tab.0.right" timestamp="1585856446592">
       <screen x="0" y="0" width="1536" height="824" />
     </state>
+    <state width="1515" height="139" key="GridCell.Tab.0.right/0.0.1536.824/-1920.0.1920.1040@0.0.1536.824" timestamp="1585810342445" />
     <state width="1899" height="123" key="GridCell.Tab.0.right/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@-1920.17.1920.1040" timestamp="1585659945803" />
     <state width="1899" height="104" key="GridCell.Tab.0.right/0.0.1536.824/-1920.17.1920.1040/-2970.-579.1050.1640@0.0.1536.824" timestamp="1585581327081" />
-    <state width="1515" height="139" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1585780627941" />
+    <state width="1515" height="135" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1585856446592" />
     <state width="1899" height="326" key="GridCell.Tab.1.bottom" timestamp="1585653169923">
       <screen x="-1920" y="17" width="1920" height="1040" />
     </state>

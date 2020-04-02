@@ -1,7 +1,7 @@
-import {OurSubmarine} from "../../src/app/our-submarine.class";
+import {OurSubmarine} from "../../src/app/services/our-submarine.class";
 import {GRID_SAMPLE, IGridScenario} from "./grid.mock";
-import {Grid} from "../../src/app/grid.class";
-import {OpponentSubmarine} from "../../src/app/opponent-submarine.class";
+import {Grid} from "../../src/app/services/grid.class";
+import {OpponentSubmarine} from "../../src/app/services/opponent-submarine.class";
 
 describe(OurSubmarine.name, () => {
 

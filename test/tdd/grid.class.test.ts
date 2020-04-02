@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {Grid} from "../../src/app/grid.class";
-import {ICoordinate} from "../../src/app/position.class";
-import {Surface} from "../../src/app/surface.class";
+import {Grid} from "../../src/app/services/grid.class";
+import {ICoordinate} from "../../src/app/services/position.class";
+import {Surface} from "../../src/app/services/surface.class";
 import {GRID_SAMPLE, IGridScenario} from "./grid.mock";
 
 describe(Grid.name, () => {

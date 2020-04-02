@@ -1,5 +1,5 @@
-import {IOrders, OpponentSubmarine} from "../../src/app/opponent-submarine.class";
-import {DirectionEnum} from "../../src/app/submarine.class";
+import {OpponentSubmarine, Order} from "../../src/app/services/opponent-submarine.class";
+import {DirectionEnum} from "../../src/app/services/submarine.class";
 
 describe('ORDER_PARSER_STRATEGIES', () => {
     [
@@ -22,7 +22,7 @@ describe('ORDER_PARSER_STRATEGIES', () => {
         {
             given: [`TRIGGER 4 2`], then: {trigger: {coordinate: {x: 4, y: 2}}}
         }
-    ].forEach((scenario: { given: string[], then: Partial<IOrders> }) => {
+    ].forEach((scenario: { given: string[], then: Partial<Order> }) => {
         it(`should return ${JSON.stringify(scenario.then)} when given orders=${scenario.given}`, () => {
             // Given
 

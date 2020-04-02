@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {ICoordinate, Position} from "../../src/app/position.class";
+import {ICoordinate, Position} from "../../src/app/services/position.class";
 
 describe(Position.name, () => {
     describe('static sum()', () => {

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Surface} from "../../src/app/surface.class";
+import {Surface} from "../../src/app/services/surface.class";
 
 interface IGridScenario {
     width: number,

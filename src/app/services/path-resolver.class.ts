@@ -87,8 +87,8 @@ export class PathResolver {
                     this.keepOnlyPositionsNearTorpedo((order.order as ITorpedoOrder).coordinate);
                     break;
                 case OrderEnum.SURFACE:
-                    this._startPositions = this.getPossiblePositions()
-                        .filter(c => c.surface === (order.order as ISurfaceOrder).index);
+                    const positions = this.getPossiblePositions().filter(c => c.surface === (order.order as ISurfaceOrder).index);
+                    this._startPositions = (positions.length > 0) ? positions : this.grid.getAvailableCells().filter(c => c.surface === (order.order as ISurfaceOrder).index);
                     this._moveScenarios = [this.createMoveScenario()];
                     this.updateMoveStrategies();
                     break;
