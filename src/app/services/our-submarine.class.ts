@@ -4,6 +4,7 @@ import {OpponentSubmarine} from "./opponent-submarine.class";
 import {ICoordinate} from "./position.class";
 import {OrderEnum, Submarine} from "./submarine.class";
 import {DirectionEnum, PathFinder} from "./path-finder.class";
+import {IPositionsStats} from "./path-resolver.class";
 
 export interface ICooldown {
     torpedo: number;
@@ -48,17 +49,12 @@ export class OurSubmarine extends Submarine {
     private _mines: Cell[] = [];
     private _isPreviousAttacks: Array<{ order: OrderEnum, cell: ICoordinate }> = [];
     private _pathFinder: PathFinder;
-    private _possiblePositions: Cell[];
+    private _positionsStats: IPositionsStats;
+    private _opponentPosition: Cell;
 
     constructor(id: number, grid: Grid, public opponentSubmarine: OpponentSubmarine) {
         super(id, grid);
         this._pathFinder = new PathFinder(grid);
-    }
-
-    private _opponentPosition: Cell;
-
-    public get opponentPosition(): Cell {
-        return this._opponentPosition
     }
 
     public set sonarResult(value: string) {
@@ -97,10 +93,10 @@ export class OurSubmarine extends Submarine {
     }
 
     public updateOpponentPosition() {
-        if (this._isPreviousAttacks.length === 1
+        if (this._isPreviousAttacks.length === 1 && this.lost < 2
             && (this._isPreviousAttacks[0].order === OrderEnum.MINE
                 || (this._isPreviousAttacks[0].order === OrderEnum.TORPEDO && this.cooldown.torpedo > 0))) {
-            const cellNexts = this.grid.getCellNext(this._isPreviousAttacks[0].cell).filter(c => this._possiblePositions.includes(c));
+            const cellNexts = this.grid.getCellNext(this._isPreviousAttacks[0].cell).filter(c => this._positionsStats.cells.includes(c));
             switch (this.opponentSubmarine.lost) {
                 case 0:
                     log('Miss, should exclude positions', cellNexts.map(c => c.coordinate));
@@ -112,8 +108,10 @@ export class OurSubmarine extends Submarine {
                     this.opponentSubmarine.pathResover.keepOnlyPositions(cellNexts);
                     break;
                 case 2:
-                    log('Hit hard! position is validated');
-                    this.opponentSubmarine.pathResover.keepOnlyPositions([(this._isPreviousAttacks[0].cell)]);
+                    if (this._positionsStats.cells.includes(this.grid.getCellFromCoordinate(this._isPreviousAttacks[0].cell))) {
+                        log('Hit hard! position is validated');
+                        this.opponentSubmarine.pathResover.keepOnlyPositions([(this._isPreviousAttacks[0].cell)]);
+                    }
                     break;
                 default:
 
@@ -175,38 +173,31 @@ export class OurSubmarine extends Submarine {
 
     private getOtherActions(): IAction[] {
         this._isPreviousAttacks = [];
-        this._opponentPosition = undefined;
         let result: IAction[] = [];
-        this._possiblePositions = this.opponentSubmarine.pathResover.getPossiblePositions();
+        this._positionsStats = this.opponentSubmarine.pathResover.getPositionsStats();
         log({
-            positions: this._possiblePositions.length < 10 && this._possiblePositions.length > 0
-                ? this._possiblePositions.map(pos => pos.coordinate) : this._possiblePositions.length
+            cells: this._positionsStats.cells.length < 10 && this._positionsStats.cells.length > 0
+                ? this._positionsStats.cells.map(pos => pos.coordinate) : this._positionsStats.cells.length,
+            numberOfMoves: this._positionsStats.numberOfMoves,
+            starts: this._positionsStats.starts.length,
+            surfaceStats: Array.from(this._positionsStats.surfaceStats.entries()).map(entry => `${entry[0]}(${entry[1].length})`)
         });
-        if (this._possiblePositions.length > 1 && this._possiblePositions.length < 5) {
-            const {min, max} = this._possiblePositions.reduce<{ min?: ICoordinate, max?: ICoordinate }>(
-                (acc, cur) => {
-                    acc.min = acc.min ? {
-                        x: Math.min(acc.min.x, cur.coordinate.x),
-                        y: Math.min(acc.min.y, cur.coordinate.y)
-                    } : cur.coordinate;
-                    acc.max = acc.max ? {
-                        x: Math.max(acc.min.x, cur.coordinate.x),
-                        y: Math.max(acc.min.y, cur.coordinate.y)
-                    } : cur.coordinate;
-                    return acc;
-                }, {}
-            );
-            if (((max.x - min.x) <= 2) && ((max.y - min.y) <= 2)) {
+        if (this._positionsStats.cells.length > 1 && this._positionsStats.cells.length <= 10) {
+            const {min, max} = Cell.getMinMax(...this._positionsStats.cells);
+            if (((max.x - min.x) <= 4) && ((max.y - min.y) <= 4)) {
+                log(`deduce position: between {x: ${min.x} to ${max.x}, y: ${min.y} to ${max.y}}`);
                 this._opponentPosition = this.grid.getCellFromCoordinate({
                     x: Math.floor((min.x + max.x) / 2),
                     y: Math.floor((min.y + max.y) / 2)
                 });
             }
-        } else if (this._possiblePositions.length === 1) {
-            this._opponentPosition = this._possiblePositions[0];
+        } else if (this._positionsStats.cells.length === 1) {
+            this._opponentPosition = this._positionsStats.cells[0];
+        } else {
+            this._opponentPosition = undefined;
         }
 
-        if (this.opponentPosition) {
+        if (this._opponentPosition) {
             // const target = (this.cooldown.torpedo === 0)
             //     ? this.grid.getCell(this.grid.getIndex(this.opponentPosition))
             //     : this.grid.getCell(this.grid.getIndex(this.grid.getOppositeCoordinate(this.opponentPosition)));
@@ -216,18 +207,19 @@ export class OurSubmarine extends Submarine {
             // }
             result.push({
                 priority: 3,
-                order: `${OrderEnum.MSG} LOOKOUT: (${this.opponentPosition.x},${this.opponentPosition.y})`
+                order: `${OrderEnum.MSG} P: (${this._opponentPosition.x},${this._opponentPosition.y})`
             });
         }
 
         const nextPosition = this._path.length > 1 ? this._path[1].cell : this._position;
 
-        if (this.opponentPosition) {
-            log({opponentPosition: this.opponentPosition});
-            let opponentCell = this.grid.getCellFromCoordinate(this.opponentPosition);
-            if (this.cooldown.torpedo === 0 && (this.position.pathLength(opponentCell) <= 5 || nextPosition.pathLength(opponentCell) <= 5)) {
-                let pathBeforeMove = this._pathFinder.searchShortestPath(this.position, opponentCell);
-                let pathAfterMove = this._pathFinder.searchShortestPath(nextPosition, opponentCell);
+        if (this._opponentPosition) {
+            log({opponentPosition: this._opponentPosition.coordinate});
+            let opponentCell = this.grid.getCellFromCoordinate(this._opponentPosition);
+            if (this.cooldown.torpedo === 0 && this._path.length > 1 && (this.position.pathLength(opponentCell) <= 5 || nextPosition.pathLength(opponentCell) <= 5)) {
+                let pathBeforeMove = this._pathFinder.searchTorpedoPath(this.position, opponentCell);
+                let pathAfterMove = this._pathFinder.searchTorpedoPath(nextPosition, opponentCell);
+                log({pathBeforeMove, pathAfterMove});
                 let torpedoInfo: { cell: Cell, priority: number };
                 if (pathBeforeMove.length <= 4) {
                     torpedoInfo = {cell: opponentCell, priority: 0};
@@ -250,7 +242,7 @@ export class OurSubmarine extends Submarine {
             }
             if (this._mines.length > 0) {
                 log({mines: this._mines.map(m => m.coordinate)});
-                let nearMines = this._mines.filter(m => m.distance(this.opponentPosition) <= 1);
+                let nearMines = this._mines.filter(m => m.distance(this._opponentPosition) <= 1);
                 if (nearMines.length > 0) {
                     const mine = nearMines[0];
                     this._mines = this._mines.filter(m => m.index !== mine.index);
@@ -259,23 +251,21 @@ export class OurSubmarine extends Submarine {
                 }
             }
         } else {
-            result.push({priority: 3, order: `${OrderEnum.MSG} HUNTING: ${this._possiblePositions.length}`});
+            result.push({
+                priority: 3,
+                order: `${OrderEnum.MSG} SEARCH: P:${this._positionsStats.cells.length} / M:${this._positionsStats.numberOfMoves} / S:${this._positionsStats.surfaceStats.size}`
+            });
         }
 
-        if ((this.cooldown.sonar === 0) && (this._possiblePositions.length > 5)) {
+        if ((this.cooldown.sonar === 0) && (this._positionsStats.cells.length > 5)) {
             this._sonar.surface = undefined;
-            if (this._possiblePositions.length > 10) {
-                const surfaces = Array.from((this._possiblePositions
-                    .reduce((acc, cur) => {
-                        const curSurface = cur.surface;
-                        const counter = (acc.get(curSurface) || 0) + 1;
-                        return acc.set(curSurface, counter);
-                    }, new Map<number, number>())).entries())
-                    .sort((a, b) => b[1] - a[1]);
+            if (this._positionsStats.cells.length > 10) {
+                const surfaces = Array.from(this._positionsStats.surfaceStats.entries())
+                    .sort((a, b) => b[1].length - a[1].length);
                 if (surfaces.length > 1) {
                     this._sonar.surface = surfaces[0][0];
                 }
-            } else if (this._possiblePositions.length === 0) {
+            } else if (this._positionsStats.cells.length === 0) {
                 this._sonar.surface = Math.floor(Math.random() * 8) + 1;
             }
 
@@ -288,11 +278,11 @@ export class OurSubmarine extends Submarine {
                 .map(moveStrategy => ({...moveStrategy, cell: this.grid.getCell(moveStrategy.index)}))
                 .filter(moveStrategy => this.grid.isAvailableCell(moveStrategy.cell));
             if (mineStrategies.length > 0) {
-                if (this.opponentPosition) {
+                if (this._opponentPosition) {
                     mineStrategies = mineStrategies
                         .map(mineStrategy => ({
                             ...mineStrategy,
-                            score: mineStrategy.cell.distance(this.opponentPosition)
+                            score: mineStrategy.cell.distance(this._opponentPosition)
                         }))
                         .sort((a, b) => b.score - a.score)
                 }
@@ -315,10 +305,10 @@ export class OurSubmarine extends Submarine {
     private nextPower(): OrderEnum {
         if (this.cooldown.torpedo > 0) {
             return OrderEnum.TORPEDO;
-        } else if ((this.cooldown.sonar > 0) && (this.turn % 3 === 1) && !this.opponentPosition) {
+        } else if ((this.cooldown.sonar > 0) && (this.turn % 3 === 1) && !this._opponentPosition) {
             return OrderEnum.SONAR;
         } else if ((this.cooldown.silence > 0) && ((this.turn % 3 === 0)
-            || !this.opponentPosition || this.opponentPosition.pathLength(this.position) < 10)) {
+            || !this._opponentPosition || this._opponentPosition.pathLength(this.position) < 10)) {
             return OrderEnum.SILENCE;
         } else { //  if ((this.cooldown.mine) > 0 && this.opponentPosition) {
             return OrderEnum.MINE;

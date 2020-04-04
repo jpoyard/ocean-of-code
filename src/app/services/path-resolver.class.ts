@@ -5,6 +5,13 @@ import {OrderEnum} from "./submarine.class";
 import {IMoveOrder, IOrder, ISurfaceOrder, ITorpedoOrder} from "./opponent-submarine.class";
 import {IMoveStrategy, MOVE_STRATEGIES_CLOCKWISE} from "./path-finder.class";
 
+export interface IPositionsStats {
+    cells: Cell[];
+    numberOfMoves: number;
+    surfaceStats: Map<number, Cell[]>;
+    starts: Cell[];
+}
+
 export interface IPathScenario {
     index: number;
     visitedCells: Cell[];
@@ -97,17 +104,36 @@ export class PathResolver {
         });
     }
 
+    public getPositionsStats(): IPositionsStats {
+        const possiblePositions = this.getPossiblePositions();
+        const surfaceStats = possiblePositions.reduce((acc, cur) => {
+            let cells: Cell[] = [];
+            if (acc.has(cur.surface)) {
+                cells = acc.get(cur.surface);
+            }
+            return acc.set(cur.surface, [...cells, cur])
+        }, new Map<number, Cell[]>());
+        return {
+            cells: possiblePositions,
+            numberOfMoves: this._moveScenarios.length,
+            starts: this._startPositions,
+            surfaceStats
+        }
+    }
+
     public getPossiblePositions(): Cell[] {
-        return Cell.removeDuplicate(this._moveScenarios
+        const cells = this._moveScenarios
             .map(
                 moveScenario => Array.from(moveScenario.paths.values())
                     .map(pathScenario => pathScenario.position)
             )
-            .reduce((acc, cur) => [...acc, ...cur], []));
+            .reduce((acc, cur) => [...acc, ...cur], []);
+        const mergedcell = Cell.removeDuplicate(cells);
+        log('duplicate: ', cells.length - mergedcell.length);
+        return mergedcell;
     }
 
     public keepOnlyPositions(coordinates: ICoordinate[]) {
-        log(coordinates);
         const cellPositions = coordinates
             .map(coordinate => this.grid.getCellFromCoordinate(coordinate))
             .filter(cell => !!cell);
@@ -150,7 +176,7 @@ export class PathResolver {
 
     public keepOnlyPositionsInSurface(index: number): void {
         if (this._moveScenarios.length > 300 || this._moveScenarios.length === 0) {
-            const surface = this.grid.surfaces[index-1];
+            const surface = this.grid.surfaces[index - 1];
             this._startPositions = surface.getAvailableCells();
             this._moveScenarios = [this.createMoveScenario()];
         } else {
@@ -252,6 +278,11 @@ export class PathResolver {
                     .some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
+        /***
+        const possiblePositions = this.getPossiblePositions();
+        if(possiblePositions.length> this._moveScenarios.length){
+
+        }
         /**
          if (this._startPositions.length === 0) {
             this._startPositions = this.grid.getAvailableCells();

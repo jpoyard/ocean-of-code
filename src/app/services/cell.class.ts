@@ -39,4 +39,8 @@ export class Cell extends Position {
     public get type(): CellTypeEnum {
         return this._type;
     }
+
+    public static getMinMax(...cells: Cell[]): {min:ICoordinate, max: ICoordinate} {
+        return Position.getMinMax(...cells.map(c=>c.coordinate));
+    }
 }

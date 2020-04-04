@@ -1,3 +1,5 @@
+import {Cell} from "./cell.class";
+
 export interface ICoordinate {
     x: number;
     y: number;
@@ -40,6 +42,22 @@ export class Position implements ICoordinate {
             x: coordinates.x * factor,
             y: coordinates.y * factor
         };
+    }
+
+    public static getMinMax(...coordinates: ICoordinate[]): {min:ICoordinate, max: ICoordinate} {
+        return coordinates.reduce<{ min: ICoordinate, max: ICoordinate }>(
+            (acc, cur) => {
+                acc.min = acc.min ? {
+                    x: Math.min(acc.min.x, cur.x),
+                    y: Math.min(acc.min.y, cur.y)
+                } : cur;
+                acc.max = acc.max ? {
+                    x: Math.max(acc.max.x, cur.x),
+                    y: Math.max(acc.max.y, cur.y)
+                } : cur;
+                return acc;
+            }, { min: coordinates[0], max: coordinates[0]}
+        );
     }
 
     public static removeDuplicate(coordinatesList: ICoordinate[]): ICoordinate[] {

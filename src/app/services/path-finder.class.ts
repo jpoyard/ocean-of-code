@@ -1,5 +1,5 @@
 import {Cell, CellTypeEnum} from "./cell.class";
-import {IPath, IPathNode} from "./our-submarine.class";
+import {IPathNode} from "./our-submarine.class";
 import {Grid} from "./grid.class";
 import {ICoordinate} from "./position.class";
 
@@ -111,6 +111,50 @@ export class PathFinder {
                 iteration++;
             } while (pathNodes.length > 0 && iteration <= maxIteration);
         }
+        return result;
+    }
+
+    public searchTorpedoPath(startCell: Cell, endCell: Cell): IPathNode[] {
+        let result: IPathNode[] = [];
+        let pathNodes: IPathNode[] = [];
+
+        pathNodes.push({cell: startCell});
+
+        let availableCells: Map<number, Cell> = this.grid.getAvailableCells()
+            .reduce((acc, cur) => acc.set(cur.index, cur), new Map<number, Cell>());
+
+        do {
+            let currentPathNode = pathNodes[pathNodes.length - 1];
+            let pathLength = currentPathNode.cell.pathLength(endCell);
+
+            if (currentPathNode.cell !== endCell) {
+                if (!currentPathNode.paths) {
+                    currentPathNode.paths = this.initializePath(currentPathNode, availableCells)
+                        .filter(p => p.cell.pathLength(endCell) <= pathLength);
+                } else if (currentPathNode.cell.equals(endCell)) {
+                    currentPathNode.paths = [];
+                }
+
+                if (currentPathNode.paths.length > 0) {
+                    const newPath = currentPathNode.paths.pop();
+                    availableCells.delete(newPath.cell.index);
+                    currentPathNode.direction = newPath.direction;
+                    pathNodes.push({cell: newPath.cell});
+                } else {
+                    const path = pathNodes.pop();
+                    availableCells.set(path.cell.index, path.cell);
+                }
+            } else {
+                if (result.length === 0 || pathNodes.length <= result.length) {
+                    result = pathNodes.map(node => ({
+                        cell: node.cell,
+                        direction: node.direction
+                    }));
+                }
+                const path = pathNodes.pop();
+                availableCells.set(path.cell.index, path.cell);
+            }
+        } while (pathNodes.length > 0);
         return result;
     }
 

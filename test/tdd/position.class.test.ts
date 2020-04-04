@@ -209,4 +209,22 @@ describe(Position.name, () => {
             })
         });
     });
+
+    describe('getMinMax', ()=>{
+        [
+            {when: [{x:1, y:10}, {x:10, y:1}], then: {min: {x:1, y:1}, max:{x:10, y:10}}}
+        ].forEach(
+            (scenario: {when: ICoordinate[], then: {min:ICoordinate, max: ICoordinate}})=>{
+                it(`should return ${JSON.stringify(scenario.then)} when ${JSON.stringify(scenario.when)}`, ()=>{
+                    // Given
+
+                    // When
+                    const actual = Position.getMinMax(...scenario.when);
+
+                    // Then
+                    expect(actual).eqls(scenario.then)
+                })
+            }
+        )
+    })
 });
