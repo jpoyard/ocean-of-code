@@ -1,8 +1,9 @@
 import {Cell} from "./cell.class";
 import {Grid} from "./grid.class";
 import {ICoordinate} from "./position.class";
-import {IMoveStrategy, MOVE_STRATEGIES_CLOCKWISE, OrderEnum} from "./submarine.class";
+import {OrderEnum} from "./submarine.class";
 import {IMoveOrder, IOrder, ISurfaceOrder, ITorpedoOrder} from "./opponent-submarine.class";
+import {IMoveStrategy, MOVE_STRATEGIES_CLOCKWISE} from "./path-finder.class";
 
 export interface IPathScenario {
     index: number;
@@ -52,7 +53,7 @@ export class PathResolver {
     }
 
     public applyMoveOrders(orders: IOrder[]) {
-        log({orders: orders});
+        log({orders: JSON.stringify(orders)});
 
         if (this._moveScenarios.length === 0) {
             this._moveScenarios.push(this.createMoveScenario());
@@ -106,9 +107,10 @@ export class PathResolver {
     }
 
     public keepOnlyPositions(coordinates: ICoordinate[]) {
+        log(coordinates);
         const cellPositions = coordinates
-            .filter(coordinate => !!coordinate)
-            .map(coordinate => this.grid.getCell(this.grid.getIndex(coordinate)));
+            .map(coordinate => this.grid.getCellFromCoordinate(coordinate))
+            .filter(cell => !!cell);
         this._moveScenarios.forEach(
             moveScenario => {
                 Array.from(moveScenario.paths.keys()).forEach(
@@ -127,14 +129,15 @@ export class PathResolver {
 
     public excludePositions(coordinates: ICoordinate[]) {
         const cellPositions = coordinates
-            .filter(coordinate => !!coordinate)
-            .map(coordinate => this.grid.getCell(this.grid.getIndex(coordinate)));
+            .map(coordinate => this.grid.getCellFromCoordinate(coordinate))
+            .filter(cell => !!cell);
         this._moveScenarios.forEach(
             moveScenario => {
                 Array.from(moveScenario.paths.keys()).forEach(
                     startPositionIndex => {
                         const pathScenario = moveScenario.paths.get(startPositionIndex);
-                        if (cellPositions.some(position => position === pathScenario.position)) {
+                        if (cellPositions.includes(pathScenario.position)) {
+                            log('exclude scenario with position', pathScenario.position.coordinate);
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
@@ -147,7 +150,7 @@ export class PathResolver {
 
     public keepOnlyPositionsInSurface(index: number): void {
         if (this._moveScenarios.length > 300 || this._moveScenarios.length === 0) {
-            const surface = this.grid.surfaces[index];
+            const surface = this.grid.surfaces[index-1];
             this._startPositions = surface.getAvailableCells();
             this._moveScenarios = [this.createMoveScenario()];
         } else {

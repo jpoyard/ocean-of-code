@@ -5,6 +5,7 @@ const FILES_NAMES: string[] = [
     'cell.class.ts',
     'cell-container.class.ts',
     'surface.class.ts',
+    'path-finder.class.ts',
     'grid.class.ts',
     'path-resolver.class.ts',
     'submarine.class.ts',
@@ -33,7 +34,7 @@ FILES_NAMES.forEach(filename => {
         writeFileStream.write(`\n/**\n * file ${filename}\n *\n **/\n`);
         content.split(/\r\n/gm).forEach(
             line => {
-                if (!line.includes('import')) {
+                if (!(line.trim().startsWith('import'))) {
                     writeFileStream.write(line.replace(/export /, ''));
                     writeFileStream.write('\r\n');
                 }

@@ -1,7 +1,8 @@
 import {Grid} from "./grid.class";
-import {DirectionEnum, OrderEnum, Submarine} from "./submarine.class";
+import {OrderEnum, Submarine} from "./submarine.class";
 import {ICoordinate} from "./position.class";
 import {PathResolver} from "./path-resolver.class";
+import {DirectionEnum} from "./path-finder.class";
 
 export interface IMoveOrder {
     direction: DirectionEnum;
@@ -115,12 +116,6 @@ export class OpponentSubmarine extends Submarine {
     constructor(id: number, grid: Grid) {
         super(id, grid);
         this.pathResover = new PathResolver(grid);
-    }
-
-    private _orders: IOrder[];
-
-    public get orders(): IOrder[] {
-        return [...this._orders];
     }
 
     public static parse(orders: string[]): IOrder[] {

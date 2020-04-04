@@ -2,7 +2,8 @@ import {STYLE} from "./ocean-of-code.component.style";
 import {Grid} from "./services/grid.class";
 import {GRID_PROPERTIES} from "./GRID_PROPERTIES";
 import {Cell, CellTypeEnum} from "./services/cell.class";
-import {DirectionEnum} from "./services/submarine.class";
+import {DirectionEnum, PathFinder} from "./services/path-finder.class";
+import {IPathNode} from "./services/our-submarine.class";
 
 export class OceanOfCodeComponent extends HTMLElement {
     public static readonly MARGE = 6;
@@ -17,6 +18,8 @@ export class OceanOfCodeComponent extends HTMLElement {
     private cellSize: number;
     private grid: Grid;
     private stats: Array<{ cell: Cell, stat: number }>;
+    private pathFinder: PathFinder;
+    private path: IPathNode[];
 
     constructor() {
         super();
@@ -27,65 +30,75 @@ export class OceanOfCodeComponent extends HTMLElement {
         window.addEventListener('resize', () => this.resize());
         this.resize();
 
+        this.pathFinder = new PathFinder(this.grid);
+
         window.onkeydown = (event: KeyboardEvent) => {
-         console.info(event.key)
             switch (event.key) {
                 case "Delete":
                     this.stats = this.grid.cells.map(cell => ({cell, stat: cell.type === CellTypeEnum.SEA ? 0 : -1}));
                     this.draw();
                     break;
-                case "ArrowUp":
-                    this.goto(DirectionEnum.NORTH);
-                    break;
-                case "ArrowDown":
-                    this.goto(DirectionEnum.SOUTH);
-                    break;
-                case "ArrowLeft":
-                    this.goto(DirectionEnum.WEST);
-                    break;
-                case "ArrowRight":
-                    this.goto(DirectionEnum.EST);
-                    break;
+                /**
+                 case "ArrowUp":
+                 this.goto(DirectionEnum.NORTH);
+                 break;
+                 case "ArrowDown":
+                 this.goto(DirectionEnum.SOUTH);
+                 break;
+                 case "ArrowLeft":
+                 this.goto(DirectionEnum.WEST);
+                 break;
+                 case "ArrowRight":
+                 this.goto(DirectionEnum.EST);
+                 break;
+                 **/
             }
         }
+    }
+
+    public searchPath() {
+        let result = this.pathFinder.searchStartCell();
+        this.path = result ? result.path : [];
+        this.draw();
     }
 
     public goto(direction: DirectionEnum): void {
         const max = this.stats.reduce((max, cur) => Math.max(max, cur.stat), 0);
         const candidates = this.stats.filter(stat => stat.stat === max);
+
         switch (direction) {
             case DirectionEnum.NORTH:
                 candidates.forEach(stat => {
-                    const index = this.grid.getIndex({x: stat.cell.coordinate.x, y: stat.cell.coordinate.y+1});
-                    if (candidates.find(c => c.cell.index === index) && this.grid.isIndexValid(index) && this.grid.isAvailableCell(this.grid.getCell(index))) {
-                        stat.stat++;
+                    const northCell = this.grid.getNorthCell(stat.cell);
+                    if (northCell && this.grid.isAvailableCell(northCell)) {
+                        this.stats[northCell.index].stat = max + 1;
                     }
                     return stat;
                 });
                 break;
             case DirectionEnum.EST:
                 candidates.forEach(stat => {
-                    const index = this.grid.getIndex({x: stat.cell.coordinate.x + 1, y: stat.cell.coordinate.y});
-                    if (candidates.find(c => c.cell.index === index) && this.grid.isIndexValid(index) && this.grid.isAvailableCell(this.grid.getCell(index))) {
-                        stat.stat++;
+                    const estCell = this.grid.getEstCell(stat.cell);
+                    if (estCell && this.grid.isAvailableCell(estCell)) {
+                        this.stats[estCell.index].stat = max + 1;
                     }
                     return stat;
                 });
                 break;
             case DirectionEnum.SOUTH:
                 candidates.forEach(stat => {
-                    const index = this.grid.getIndex({x: stat.cell.coordinate.x, y: stat.cell.coordinate.y + 1});
-                    if (candidates.find(c => c.cell.index === index) && this.grid.isIndexValid(index) && this.grid.isAvailableCell(this.grid.getCell(index))) {
-                        stat.stat++;
+                    const southCell = this.grid.getSouthCell(stat.cell);
+                    if (southCell && this.grid.isAvailableCell(southCell)) {
+                        this.stats[southCell.index].stat = max + 1;
                     }
                     return stat;
                 });
                 break;
             case DirectionEnum.WEST:
                 candidates.forEach(stat => {
-                    const index = this.grid.getIndex({x: stat.cell.coordinate.x - 1, y: stat.cell.coordinate.y});
-                    if (candidates.find(c => c.cell.index === index) && this.grid.isIndexValid(index) && this.grid.isAvailableCell(this.grid.getCell(index))) {
-                        stat.stat++;
+                    const westCell = this.grid.getWestCell(stat.cell);
+                    if (westCell && this.grid.isAvailableCell(westCell)) {
+                        this.stats[westCell.index].stat = max + 1;
                     }
                     return stat;
                 });
@@ -104,13 +117,14 @@ export class OceanOfCodeComponent extends HTMLElement {
         const toolbar = document.createElement('div');
         toolbar.classList.add('toolbar');
 
-        const buttons = document.createElement('div');
-        buttons.classList.add('buttons');
+        const directionButtons = document.createElement('div');
+        directionButtons.classList.add('buttons');
+        directionButtons.style.marginBottom = '10px';
 
         const leftButton = document.createElement('button');
         leftButton.textContent = 'West';
         leftButton.onclick = () => this.goto(DirectionEnum.WEST);
-        buttons.appendChild(leftButton);
+        directionButtons.appendChild(leftButton);
 
         const middleButtons = document.createElement('div');
         middleButtons.classList.add('middle-buttons');
@@ -125,18 +139,26 @@ export class OceanOfCodeComponent extends HTMLElement {
         downButton.onclick = () => this.goto(DirectionEnum.SOUTH);
         middleButtons.appendChild(downButton);
 
-        buttons.appendChild(middleButtons);
+        directionButtons.appendChild(middleButtons);
 
         const rightButton = document.createElement('button');
         rightButton.textContent = 'Est';
         rightButton.onclick = () => this.goto(DirectionEnum.EST);
-        buttons.appendChild(rightButton);
+        directionButtons.appendChild(rightButton);
 
-        toolbar.appendChild(buttons);
+        toolbar.appendChild(directionButtons);
+
+        const searchPathButton = document.createElement('button');
+        searchPathButton.textContent = 'Search path';
+        searchPathButton.onclick = () => this.searchPath();
+
+        toolbar.appendChild(searchPathButton);
+
         container.appendChild(toolbar);
 
         this.canvas = document.createElement('canvas');
         this.canvas.classList.add('draw-zone');
+        this.canvas.onclick = (event: MouseEvent) => this.selectCell(event);
         this.canvasCtx = this.canvas.getContext('2d');
 
         container.appendChild((this.canvas));
@@ -219,16 +241,21 @@ export class OceanOfCodeComponent extends HTMLElement {
             .filter(cell => cell.type === CellTypeEnum.ISLAND)
             .forEach(cell => this.drawIsland(cell));
 
-        this.stats.forEach(stat => this.drawText(stat));
+        if (this.path) {
+            console.info(this.path);
+            this.path.forEach((node, index) => this.drawText(index, node.cell))
+        } else {
+            this.stats.forEach(stat => this.drawText(stat.stat, stat.cell));
+        }
     }
 
-    private drawText({stat, cell}: { stat: number, cell: Cell }) {
+    private drawText(value: any, cell: Cell) {
         if (cell) {
             this.canvasCtx.font = "1em Arial";
             this.canvasCtx.fillStyle = this.TEXT_COLOR;
             this.canvasCtx.textAlign = "center";
             this.canvasCtx.textBaseline = 'middle';
-            this.canvasCtx.fillText(stat.toString(),
+            this.canvasCtx.fillText(value!==undefined ? value.toString() : '-',
                 OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 2,
                 OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2,
                 this.cellSize);
@@ -242,5 +269,12 @@ export class OceanOfCodeComponent extends HTMLElement {
             OceanOfCodeComponent.MARGE + cell.y * this.cellSize,
             this.cellSize,
             this.cellSize);
+    }
+
+    private selectCell(event: MouseEvent) {
+        const x = Math.floor((event.offsetX - OceanOfCodeComponent.MARGE)/this.cellSize);
+        const y = Math.floor((event.offsetY - OceanOfCodeComponent.MARGE)/this.cellSize);
+        this.path = this.pathFinder.searchLongestPath(this.grid.getCell(this.grid.getIndex({x, y})));
+        this.draw();
     }
 }

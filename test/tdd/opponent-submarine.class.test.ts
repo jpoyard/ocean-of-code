@@ -1,5 +1,5 @@
 import {OpponentSubmarine, Order} from "../../src/app/services/opponent-submarine.class";
-import {DirectionEnum} from "../../src/app/services/submarine.class";
+import {DirectionEnum} from "../../src/app/services/path-finder.class";
 
 describe('ORDER_PARSER_STRATEGIES', () => {
     [

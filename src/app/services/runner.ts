@@ -18,7 +18,7 @@ const grid = new Grid(width, height, tmpGrid);
 const opponentSubmarine = new OpponentSubmarine(myId === 0 ? 1 : 0, grid);
 const ourSubmarine = new OurSubmarine(myId, grid, opponentSubmarine);
 
-let {position} = ourSubmarine.searchStartCell();
+let position = ourSubmarine.searchStartCell();
 
 console.log(`${position.coordinate.x} ${position.coordinate.y}`);
 
@@ -32,7 +32,10 @@ while (true) {
     );
     ourSubmarine.sonarResult = readline();
 
+    // Should update positions
     opponentSubmarine.life = parseInt(inputs[3]);
+    ourSubmarine.updateOpponentPosition();
+
     opponentSubmarine.setOrders(readline().split('|'));
 
     console.log(ourSubmarine.getActions()
