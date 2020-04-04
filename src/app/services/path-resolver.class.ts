@@ -75,6 +75,7 @@ export class PathResolver {
                     this.updateMoveStrategies();
                     break;
                 case OrderEnum.SILENCE:
+                    this.reduceMoveStrategies();
                     this._moveScenarios = this._moveScenarios
                         .map(moveScenario => {
                             const moveScenarios: IMoveScenario[] = [];
@@ -163,7 +164,6 @@ export class PathResolver {
                     startPositionIndex => {
                         const pathScenario = moveScenario.paths.get(startPositionIndex);
                         if (cellPositions.includes(pathScenario.position)) {
-                            log('exclude scenario with position', pathScenario.position.coordinate);
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
@@ -267,8 +267,32 @@ export class PathResolver {
         return moveScenario;
     }
 
-    private updateMoveStrategies(): void {
+    private reduceMoveStrategies(): void {
+        const MAX = this.grid.width * this.grid.height;
         const positions = this.getPossiblePositions();
+        this._startPositions.forEach(startPosition=>{
+            positions.forEach(position=>{
+                const minLength = this._moveScenarios.reduce(
+                    (acc, cur)=>{
+                        if(cur.paths.has(startPosition.index) && cur.paths.get(startPosition.index).position === position){
+                            acc = Math.min(acc, cur.paths.get(startPosition.index).visitedCells.length);
+                        }
+                        return acc;
+                    }, MAX
+                );
+                this._moveScenarios.forEach(moveScenario=>{
+                        if(moveScenario.paths.has(startPosition.index)
+                            && moveScenario.paths.get(startPosition.index).position === position
+                            && moveScenario.paths.get(startPosition.index).visitedCells.length > minLength){
+                            moveScenario.paths.delete(startPosition.index);
+                        }
+                    }, MAX
+                )
+            })
+        });
+    }
+
+    private updateMoveStrategies(): void {
         this._moveScenarios = this._moveScenarios.filter(
             scenario => scenario.paths.size > 0
         );
@@ -278,11 +302,7 @@ export class PathResolver {
                     .some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
-        /***
-        const possiblePositions = this.getPossiblePositions();
-        if(possiblePositions.length> this._moveScenarios.length){
 
-        }
         /**
          if (this._startPositions.length === 0) {
             this._startPositions = this.grid.getAvailableCells();
