@@ -148,17 +148,19 @@ export class OurSubmarine extends Submarine {
             this._path = this._pathFinder.searchLongestPath(this.position);
         }
 
+        const torpedoAttack = this._previousAttacks.find(p => p.order === OrderEnum.TORPEDO);
+
         if (this._path.length === 0 || !this._path[0].direction) {
             this._pathFinder.clearVisitedCell();
             result.push({priority: 1, order: OrderEnum.SURFACE});
-        } else if (this.cooldown.silence === 0
-                && (this.lost > 0 || this._previousAttacks.find(p => p.order === OrderEnum.TORPEDO))) {
+        } else if (this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack)) {
+            let checkDistanceFn = torpedoAttack ? (cell) => cell.pathLength(torpedoAttack) <= 4 : () => true;
             let direction = DirectionEnum.WEST;
             let length = 0;
             if (this._path.length > 4) {
                 length = 1;
                 direction = this._path.shift().direction;
-                while (this._path.length > 0 && direction === this._path[0].direction && length < 4) {
+                while (this._path.length > 0 && direction === this._path[0].direction && length < 4 && checkDistanceFn(this._path[0].cell)) {
                     this._pathFinder.addVisitedCell(this._path.shift().cell);
                     length++;
                 }
@@ -245,9 +247,11 @@ export class OurSubmarine extends Submarine {
                 let nearMines = this._mines.filter(m => m.distance(this._opponentPosition) <= 1);
                 if (nearMines.length > 0) {
                     const mine = nearMines[0];
-                    this._mines = this._mines.filter(m => m.index !== mine.index);
-                    this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: mine});
-                    result.push({priority: 2, order: `${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`});
+                    if(mine === this._opponentPosition || !this.opponentSubmarine.pathResover.isAvailable(mine)){
+                        this._mines = this._mines.filter(m => m.index !== mine.index);
+                        this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: mine});
+                        result.push({priority: 2, order: `${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`});
+                    }
                 }
             }
         } else {

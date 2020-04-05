@@ -59,6 +59,11 @@ export class PathResolver {
         }
     }
 
+    public isAvailable(cell: Cell): boolean {
+        return this._moveScenarios.some(
+            moveScenario => Array.from(moveScenario.paths.values()).some(path => path.visitedCells.includes(cell)))
+    }
+
     public applyMoveOrders(orders: IOrder[]) {
         log({orders: JSON.stringify(orders)});
 
@@ -270,20 +275,20 @@ export class PathResolver {
     private reduceMoveStrategies(): void {
         const MAX = this.grid.width * this.grid.height;
         const positions = this.getPossiblePositions();
-        this._startPositions.forEach(startPosition=>{
-            positions.forEach(position=>{
+        this._startPositions.forEach(startPosition => {
+            positions.forEach(position => {
                 const minLength = this._moveScenarios.reduce(
-                    (acc, cur)=>{
-                        if(cur.paths.has(startPosition.index) && cur.paths.get(startPosition.index).position === position){
+                    (acc, cur) => {
+                        if (cur.paths.has(startPosition.index) && cur.paths.get(startPosition.index).position === position) {
                             acc = Math.min(acc, cur.paths.get(startPosition.index).visitedCells.length);
                         }
                         return acc;
                     }, MAX
                 );
-                this._moveScenarios.forEach(moveScenario=>{
-                        if(moveScenario.paths.has(startPosition.index)
+                this._moveScenarios.forEach(moveScenario => {
+                        if (moveScenario.paths.has(startPosition.index)
                             && moveScenario.paths.get(startPosition.index).position === position
-                            && moveScenario.paths.get(startPosition.index).visitedCells.length > minLength){
+                            && moveScenario.paths.get(startPosition.index).visitedCells.length > minLength) {
                             moveScenario.paths.delete(startPosition.index);
                         }
                     }, MAX
