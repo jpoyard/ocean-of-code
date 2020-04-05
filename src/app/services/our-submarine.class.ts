@@ -153,7 +153,7 @@ export class OurSubmarine extends Submarine {
         if (this._path.length === 0 || !this._path[0].direction) {
             this._pathFinder.clearVisitedCell();
             result.push({priority: 1, order: OrderEnum.SURFACE});
-        } else if (this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack)) {
+        } else if (this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack || this.turn % 20 >= 2)) {
             let checkDistanceFn = torpedoAttack ? (cell) => cell.pathLength(torpedoAttack) <= 4 : () => true;
             let direction = DirectionEnum.WEST;
             let length = 0;
@@ -247,11 +247,9 @@ export class OurSubmarine extends Submarine {
                 let nearMines = this._mines.filter(m => m.distance(this._opponentPosition) <= 1);
                 if (nearMines.length > 0) {
                     const mine = nearMines[0];
-                    if(mine === this._opponentPosition || !this.opponentSubmarine.pathResover.isAvailable(mine)){
-                        this._mines = this._mines.filter(m => m.index !== mine.index);
-                        this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: mine});
-                        result.push({priority: 2, order: `${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`});
-                    }
+                    this._mines = this._mines.filter(m => m.index !== mine.index);
+                    this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: mine});
+                    result.push({priority: 2, order: `${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`});
                 }
             }
         } else {

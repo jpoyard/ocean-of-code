@@ -59,11 +59,6 @@ export class PathResolver {
         }
     }
 
-    public isAvailable(cell: Cell): boolean {
-        return this._moveScenarios.some(
-            moveScenario => Array.from(moveScenario.paths.values()).some(path => path.visitedCells.includes(cell)))
-    }
-
     public applyMoveOrders(orders: IOrder[]) {
         log({orders: JSON.stringify(orders)});
 
