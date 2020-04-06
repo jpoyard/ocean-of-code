@@ -1,6 +1,6 @@
 import {Cell} from "./cell.class";
 import {Grid} from "./grid.class";
-import {ICoordinate} from "./position.class";
+import {ICoordinate, Position} from "./position.class";
 import {OrderEnum} from "./submarine.class";
 import {IMoveOrder, IOrder, ISurfaceOrder, ITorpedoOrder} from "./opponent-submarine.class";
 import {IMoveStrategy, MOVE_STRATEGIES_CLOCKWISE} from "./path-finder.class";
@@ -93,7 +93,7 @@ export class PathResolver {
                     this.updateMoveStrategies();
                     break;
                 case OrderEnum.TORPEDO:
-                    this.keepOnlyPositionsNearTorpedo((order.order as ITorpedoOrder).coordinate);
+                    this.keepOnlyPositionsNearTorpedoArea((order.order as ITorpedoOrder).coordinate);
                     break;
                 case OrderEnum.SURFACE:
                     const positions = this.getPossiblePositions().filter(c => c.surface === (order.order as ISurfaceOrder).index);
@@ -134,16 +134,33 @@ export class PathResolver {
         return mergedcell;
     }
 
-    public keepOnlyPositions(coordinates: ICoordinate[]) {
-        const cellPositions = coordinates
-            .map(coordinate => this.grid.getCellFromCoordinate(coordinate))
-            .filter(cell => !!cell);
+    public keepOnlyPosition(coordinate: ICoordinate) {
+        const position = this.grid.getCellFromCoordinate(coordinate);
         this._moveScenarios.forEach(
             moveScenario => {
                 Array.from(moveScenario.paths.keys()).forEach(
                     startPositionIndex => {
                         const pathScenario = moveScenario.paths.get(startPositionIndex);
-                        if (!cellPositions.some(position => position === pathScenario.position)) {
+                        if (position !== pathScenario.position) {
+                            moveScenario.paths.delete(startPositionIndex)
+                        }
+                    }
+                );
+                return moveScenario;
+            }
+        );
+        this.updateMoveStrategies();
+    }
+
+    public keepOnlyPositions(coordinates: ICoordinate[]) {
+        const cellPositions = coordinates
+            .map(coordinate => this.grid.getCellFromCoordinate(coordinate));
+        this._moveScenarios.forEach(
+            moveScenario => {
+                Array.from(moveScenario.paths.keys()).forEach(
+                    startPositionIndex => {
+                        const pathScenario = moveScenario.paths.get(startPositionIndex);
+                        if (!cellPositions.includes(pathScenario.position)) {
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
@@ -163,7 +180,25 @@ export class PathResolver {
                 Array.from(moveScenario.paths.keys()).forEach(
                     startPositionIndex => {
                         const pathScenario = moveScenario.paths.get(startPositionIndex);
-                        if (cellPositions.includes(pathScenario.position)) {
+                        if (cellPositions.some(position => position === pathScenario.position)) {
+                            moveScenario.paths.delete(startPositionIndex)
+                        }
+                    }
+                );
+                return moveScenario;
+            }
+        );
+        this.updateMoveStrategies();
+    }
+
+    public excludePosition(coordinate: ICoordinate) {
+        const position = this.grid.getCellFromCoordinate(coordinate);
+        this._moveScenarios.forEach(
+            moveScenario => {
+                Array.from(moveScenario.paths.keys()).forEach(
+                    startPositionIndex => {
+                        const pathScenario = moveScenario.paths.get(startPositionIndex);
+                        if (position === pathScenario.position) {
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
@@ -222,13 +257,14 @@ export class PathResolver {
         this.updateMoveStrategies();
     }
 
-    public keepOnlyPositionsNearTorpedo(coordinate: ICoordinate) {
+    public keepOnlyPositionsNearTorpedoArea(coordinate: ICoordinate) {
+        const torpedoArea = this.grid.getTorpedoArea(new Position(coordinate));
         this._moveScenarios.forEach(
             moveScenario => {
                 Array.from(moveScenario.paths.keys()).forEach(
                     startPositionIndex => {
                         const pathScenario = moveScenario.paths.get(startPositionIndex);
-                        if (pathScenario.position.pathLength(coordinate) > 4) {
+                        if (!torpedoArea.includes(pathScenario.position)) {
                             moveScenario.paths.delete(startPositionIndex)
                         }
                     }
@@ -236,8 +272,8 @@ export class PathResolver {
                 return moveScenario;
             }
         );
+        this.reduceMoveStrategies();
         this.updateMoveStrategies();
-
     }
 
     private createMoveScenario(): IMoveScenario {
@@ -281,18 +317,19 @@ export class PathResolver {
                     }, MAX
                 );
                 this._moveScenarios.forEach(moveScenario => {
-                        if (moveScenario.paths.has(startPosition.index)
-                            && moveScenario.paths.get(startPosition.index).position === position
-                            && moveScenario.paths.get(startPosition.index).visitedCells.length > minLength) {
-                            moveScenario.paths.delete(startPosition.index);
-                        }
-                    }, MAX
-                )
+                    if (moveScenario.paths.has(startPosition.index)
+                        && moveScenario.paths.get(startPosition.index).position === position
+                        && moveScenario.paths.get(startPosition.index).visitedCells.length > minLength) {
+                        moveScenario.paths.delete(startPosition.index);
+                    }
+                })
             })
         });
+        this._moveScenarios = this._moveScenarios.filter(ms => ms.paths.size > 0);
     }
 
     private updateMoveStrategies(): void {
+        // log('Before',{moveScenarios: this._moveScenarios.length});
         this._moveScenarios = this._moveScenarios.filter(
             scenario => scenario.paths.size > 0
         );
@@ -302,20 +339,7 @@ export class PathResolver {
                     .some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
-
-        /**
-         if (this._startPositions.length === 0) {
-            this._startPositions = this.grid.getAvailableCells();
-            this._moveScenarios = [this.createMoveScenario()];
-        }
-         **/
-        log({moveScenarios: this._moveScenarios.length});
-        /**
-         log({
-            startPositions: this._startPositions.length > 0 && this._startPositions.length < 10
-                ? this._startPositions.map(p => p.coordinate) : this._startPositions.length
-        })
-         **/
+        // log('After',{moveScenarios: this._moveScenarios.length});
     }
 
 

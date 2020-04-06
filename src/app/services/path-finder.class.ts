@@ -161,6 +161,7 @@ export class PathFinder {
     public searchLongestPath(cell: Cell): IPathNode[] {
         let result: IPathNode[] = [];
         let pathNodes: IPathNode[] = [];
+        this._isClockwise = cell.x < this.grid.width/2;
 
         if (this.grid.isAvailableCell(cell)) {
             pathNodes.push({cell});
@@ -225,7 +226,6 @@ export class PathFinder {
     }
 
     private initializePath(currentPathNode: IPathNode, availableCells: Map<number, Cell>) {
-        this._isClockwise = !this._isClockwise;
         return this.getMoveStrategies(currentPathNode.cell)
             .filter(strategy => availableCells.has(strategy.index))
             .map(strategy => ({cell: this.grid.getCell(strategy.index), direction: strategy.direction}))

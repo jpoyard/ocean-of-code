@@ -96,25 +96,24 @@ export class OurSubmarine extends Submarine {
         if (this._previousAttacks.length === 1 && this.lost < 2
             && (this._previousAttacks[0].order === OrderEnum.MINE
                 || (this._previousAttacks[0].order === OrderEnum.TORPEDO && this.cooldown.torpedo > 0))) {
-            const cellNexts = this.grid.getCellNext(this._previousAttacks[0].cell).filter(c => this._positionsStats.cells.includes(c));
+            const dangerArea = this.grid.getDangerArea(this._previousAttacks[0].cell);
             switch (this.opponentSubmarine.lost) {
                 case 0:
-                    log('Miss, should exclude positions', cellNexts.map(c => c.coordinate));
-                    this.opponentSubmarine.pathResover.excludePositions(cellNexts);
+                    log('Miss, should exclude positions', dangerArea.map(c => c.coordinate));
+                    this.opponentSubmarine.pathResover.excludePositions(dangerArea);
                     break;
                 case 1:
-                    log(`Hit! should exclude only target position ${this._previousAttacks[0].cell}, but keep next positions`, cellNexts.map(c => c.coordinate));
-                    this.opponentSubmarine.pathResover.excludePositions([this._previousAttacks[0].cell]);
-                    this.opponentSubmarine.pathResover.keepOnlyPositions(cellNexts);
+                    log(`Hit! should keep only danger area around {x:${this._previousAttacks[0].cell.x}, y:${this._previousAttacks[0].cell.y}}`, dangerArea.map(c => c.coordinate));
+                    this.opponentSubmarine.pathResover.excludePosition(this._previousAttacks[0].cell);
+                    this.opponentSubmarine.pathResover.keepOnlyPositions(dangerArea);
                     break;
                 case 2:
                     if (this._positionsStats.cells.includes(this.grid.getCellFromCoordinate(this._previousAttacks[0].cell))) {
                         log('Hit hard! position is validated');
-                        this.opponentSubmarine.pathResover.keepOnlyPositions([(this._previousAttacks[0].cell)]);
+                        this.opponentSubmarine.pathResover.keepOnlyPosition((this._previousAttacks[0].cell));
                     }
                     break;
                 default:
-
                     break;
             }
         }
@@ -154,7 +153,7 @@ export class OurSubmarine extends Submarine {
             this._pathFinder.clearVisitedCell();
             result.push({priority: 1, order: OrderEnum.SURFACE});
         } else if (this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack || this.turn % 20 >= 2)) {
-            let checkDistanceFn = torpedoAttack ? (cell) => cell.pathLength(torpedoAttack) <= 4 : () => true;
+            let checkDistanceFn = torpedoAttack ? (cell) => cell.pathLength(torpedoAttack.cell) <= 4 : () => true;
             let direction = DirectionEnum.WEST;
             let length = 0;
             if (this._path.length > 4) {
@@ -187,7 +186,7 @@ export class OurSubmarine extends Submarine {
         });
         if (this._positionsStats.cells.length > 1 && this._positionsStats.cells.length <= 10) {
             const {min, max} = Cell.getMinMax(...this._positionsStats.cells);
-            if (((max.x - min.x) <= 4) && ((max.y - min.y) <= 4)) {
+            if (((max.x - min.x) <= 3) && ((max.y - min.y) <= 3)) {
                 log(`deduce position: between {x: ${min.x} to ${max.x}, y: ${min.y} to ${max.y}}`);
                 this._opponentPosition = this.grid.getCellFromCoordinate({
                     x: Math.floor((min.x + max.x) / 2),
@@ -200,47 +199,18 @@ export class OurSubmarine extends Submarine {
             this._opponentPosition = undefined;
         }
 
+        const nextPosition = this._path.length > 1 ? this._path[1].cell : this._position;
+
         if (this._opponentPosition) {
-            // const target = (this.cooldown.torpedo === 0)
-            //     ? this.grid.getCell(this.grid.getIndex(this.opponentPosition))
-            //     : this.grid.getCell(this.grid.getIndex(this.grid.getOppositeCoordinate(this.opponentPosition)));
-            // const path = this.searchShortestPath(this.position, target);
-            // if (path.length > 0) {
-            //     this._path = path;
-            // }
             result.push({
                 priority: 3,
                 order: `${OrderEnum.MSG} P: (${this._opponentPosition.x},${this._opponentPosition.y})`
             });
-        }
 
-        const nextPosition = this._path.length > 1 ? this._path[1].cell : this._position;
-
-        if (this._opponentPosition) {
             log({opponentPosition: this._opponentPosition.coordinate});
             let opponentCell = this.grid.getCellFromCoordinate(this._opponentPosition);
             if (this.cooldown.torpedo === 0 && this._path.length > 1 && (this.position.pathLength(opponentCell) <= 5 || nextPosition.pathLength(opponentCell) <= 5)) {
-                let pathBeforeMove = this._pathFinder.searchTorpedoPath(this.position, opponentCell);
-                let pathAfterMove = this._pathFinder.searchTorpedoPath(nextPosition, opponentCell);
-                log({pathBeforeMove, pathAfterMove});
-                let torpedoInfo: { cell: Cell, priority: number };
-                if (pathBeforeMove.length <= 4) {
-                    torpedoInfo = {cell: opponentCell, priority: 0};
-                } else if (pathAfterMove.length <= 4) {
-                    torpedoInfo = {cell: opponentCell, priority: 2};
-                } else if (pathBeforeMove.length === 5) {
-                    torpedoInfo = {cell: pathBeforeMove.pop().cell, priority: 0};
-                } else if (pathAfterMove.length === 5) {
-                    torpedoInfo = {cell: pathAfterMove.pop().cell, priority: 2};
-                }
-
-                if (torpedoInfo) {
-                    this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: torpedoInfo.cell});
-                    result.push({
-                        priority: torpedoInfo.priority,
-                        order: `${OrderEnum.TORPEDO} ${torpedoInfo.cell.x} ${torpedoInfo.cell.y}`
-                    });
-                }
+                this.sendTorpedo(opponentCell, nextPosition, result);
             }
             if (this._mines.length > 0) {
                 log({mines: this._mines.map(m => m.coordinate)});
@@ -257,24 +227,33 @@ export class OurSubmarine extends Submarine {
                 priority: 3,
                 order: `${OrderEnum.MSG} SEARCH: P:${this._positionsStats.cells.length} / M:${this._positionsStats.numberOfMoves} / S:${this._positionsStats.surfaceStats.size}`
             });
-        }
 
-        if ((this.cooldown.sonar === 0) && (this._positionsStats.cells.length > 5)) {
-            this._sonar.surface = undefined;
-            if (this._positionsStats.cells.length > 10) {
-                const surfaces = Array.from(this._positionsStats.surfaceStats.entries())
-                    .sort((a, b) => b[1].length - a[1].length);
-                if (surfaces.length > 1) {
-                    this._sonar.surface = surfaces[0][0];
+            if ((this.cooldown.sonar === 0) && (this._positionsStats.cells.length > 5)) {
+                this._sonar.surface = undefined;
+                if (this._positionsStats.cells.length > 10) {
+                    const surfaces = Array.from(this._positionsStats.surfaceStats.entries())
+                        .sort((a, b) => b[1].length - a[1].length);
+                    if (surfaces.length > 1) {
+                        this._sonar.surface = surfaces[0][0];
+                    }
+                } else if (this._positionsStats.cells.length === 0) {
+                    this._sonar.surface = Math.floor(Math.random() * 8) + 1;
                 }
-            } else if (this._positionsStats.cells.length === 0) {
-                this._sonar.surface = Math.floor(Math.random() * 8) + 1;
-            }
 
-            if (this._sonar.surface) {
-                result.push({priority: 2, order: `${OrderEnum.SONAR} ${this._sonar.surface}`})
+                if (this._sonar.surface) {
+                    result.push({priority: 2, order: `${OrderEnum.SONAR} ${this._sonar.surface}`})
+                }
+            } else if (this._positionsStats.surfaceStats.has(this.position.surface) && (this.cooldown.silence === 0)) {
+                const cells = this._positionsStats.surfaceStats.get(this.position.surface);
+                const {min, max} = Cell.getMinMax(...cells);
+                const targetCell = this.grid.getCellFromCoordinate({
+                    x: Math.floor((min.x + max.x) / 2),
+                    y: Math.floor((min.y + max.y) / 2)
+                });
+                this.sendTorpedo(targetCell, nextPosition, result);
             }
         }
+
         if (this.cooldown.mine === 0) {
             let mineStrategies = this._pathFinder.getMoveStrategies(nextPosition)
                 .map(moveStrategy => ({...moveStrategy, cell: this.grid.getCell(moveStrategy.index)}))
@@ -302,6 +281,32 @@ export class OurSubmarine extends Submarine {
             }
         }
         return result
+    }
+
+    private sendTorpedo(targetCell: Cell, nextPosition: Cell, result: IAction[]) {
+        let torpedoAreaBeforeMove = this.grid.getTorpedoAreaWithoutDangerArea(this.position);
+        let torpedoAreaAfterMove = this.grid.getTorpedoAreaWithoutDangerArea(nextPosition);
+        let dangerOpponentArea = this.grid.getDangerArea(targetCell);
+        let torpedoInfo: { cell: Cell, priority: number };
+        if (torpedoAreaBeforeMove.includes(targetCell)) {
+            torpedoInfo = {cell: targetCell, priority: 0};
+        } else if (torpedoAreaAfterMove.includes(targetCell)) {
+            torpedoInfo = {cell: targetCell, priority: 2};
+        } else if (dangerOpponentArea.some(p => torpedoAreaBeforeMove.includes(p))) {
+            const target = dangerOpponentArea.filter(p => torpedoAreaBeforeMove.includes(p));
+            torpedoInfo = {cell: target[0], priority: 0};
+        } else if (dangerOpponentArea.some(p => torpedoAreaAfterMove.includes(p))) {
+            const target = dangerOpponentArea.filter(p => torpedoAreaAfterMove.includes(p));
+            torpedoInfo = {cell: target[0], priority: 2};
+        }
+
+        if (torpedoInfo) {
+            this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: torpedoInfo.cell});
+            result.push({
+                priority: torpedoInfo.priority,
+                order: `${OrderEnum.TORPEDO} ${torpedoInfo.cell.x} ${torpedoInfo.cell.y}`
+            });
+        }
     }
 
     private nextPower(): OrderEnum {

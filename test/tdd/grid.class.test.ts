@@ -3,6 +3,7 @@ import {Grid} from "../../src/app/services/grid.class";
 import {ICoordinate} from "../../src/app/services/position.class";
 import {Surface} from "../../src/app/services/surface.class";
 import {GRID_SAMPLE, IGridScenario} from "./grid.mock";
+import {CellTypeEnum} from "../../src/app/services/cell.class";
 
 describe(Grid.name, () => {
     it(`should be created`, () => {
@@ -189,4 +190,59 @@ describe(Grid.name, () => {
                 })
         )
     });
+
+    describe('getTorpedoAreaWithoutDangerArea()', () => {
+        const scenario = {given: GRID_SAMPLE[0]};
+        it('should return torpedo area without dangerous area (distance > 1)', () => {
+            // Given
+            const grid = new Grid(scenario.given.width, scenario.given.height, scenario.given.grid);
+
+            // When
+            const position = grid.getCellFromCoordinate({x: 7, y: 7});
+            const actual = grid.getTorpedoAreaWithoutDangerArea(position);
+
+            // Then
+            actual.forEach((cell)=>{
+                expect(cell.type === CellTypeEnum.SEA).to.be.true;
+                expect(cell.pathLength(position)).to.be.at.most(4);
+                expect(cell.distance(position)).greaterThan(1);
+            })
+        })
+    })
+
+    describe('getTorpedoArea()', () => {
+        const scenario = {given: GRID_SAMPLE[0]};
+        it('should return torpedo area with dangerous area', () => {
+            // Given
+            const grid = new Grid(scenario.given.width, scenario.given.height, scenario.given.grid);
+
+            // When
+            const position = grid.getCellFromCoordinate({x: 7, y: 7});
+            const actual = grid.getTorpedoArea(position);
+
+            // Then
+            actual.forEach((cell)=>{
+                expect(cell.type === CellTypeEnum.SEA).to.be.true;
+                expect(cell.pathLength(position)).to.be.at.most(4);
+            })
+        })
+    })
+
+    describe('getDangerArea()', () => {
+        const scenario = {given: GRID_SAMPLE[0]};
+        it('should return torpedo area without dangerous are (distance > 1)', () => {
+            // Given
+            const grid = new Grid(scenario.given.width, scenario.given.height, scenario.given.grid);
+
+            // When
+            const position = grid.getCellFromCoordinate({x: 7, y: 7});
+            const actual = grid.getDangerArea(position);
+
+            // Then
+            actual.forEach((cell)=>{
+                expect(cell.type === CellTypeEnum.SEA).to.be.true;
+                expect(cell.distance(position)).to.be.at.most(1);
+            })
+        })
+    })
 });

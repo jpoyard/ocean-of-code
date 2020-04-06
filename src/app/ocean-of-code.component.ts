@@ -20,6 +20,7 @@ export class OceanOfCodeComponent extends HTMLElement {
     private stats: Array<{ cell: Cell, stat: number }>;
     private pathFinder: PathFinder;
     private path: IPathNode[];
+    private area: Array<{cell: Cell, pathLength: number}>;
 
     constructor() {
         super();
@@ -242,8 +243,9 @@ export class OceanOfCodeComponent extends HTMLElement {
             .forEach(cell => this.drawIsland(cell));
 
         if (this.path) {
-            console.info(this.path);
             this.path.forEach((node, index) => this.drawText(index, node.cell))
+        } else if (this.area) {
+            this.area.forEach((area, index) => this.drawText(area.pathLength, area.cell))
         } else {
             this.stats.forEach(stat => this.drawText(stat.stat, stat.cell));
         }
@@ -274,7 +276,11 @@ export class OceanOfCodeComponent extends HTMLElement {
     private selectCell(event: MouseEvent) {
         const x = Math.floor((event.offsetX - OceanOfCodeComponent.MARGE)/this.cellSize);
         const y = Math.floor((event.offsetY - OceanOfCodeComponent.MARGE)/this.cellSize);
-        this.path = this.pathFinder.searchLongestPath(this.grid.getCell(this.grid.getIndex({x, y})));
+        const position = this.grid.getCellFromCoordinate({x, y});
+
+        // this.path = this.pathFinder.searchLongestPath(position);
+        this.area = this.grid.getDangerArea(position.coordinate).map(cell=>({cell, pathLength: position.pathLength(cell)}));
+
         this.draw();
     }
 }

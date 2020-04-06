@@ -34,7 +34,7 @@ FILES_NAMES.forEach(filename => {
         writeFileStream.write(`\n/**\n * file ${filename}\n *\n **/\n`);
         content.split(/\r\n/gm).forEach(
             line => {
-                if (!(line.trim().startsWith('import'))) {
+                if (!(line.trim().startsWith('import') && !(line.trim().startsWith('//')))) {
                     writeFileStream.write(line.replace(/export /, ''));
                     writeFileStream.write('\r\n');
                 }

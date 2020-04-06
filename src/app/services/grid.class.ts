@@ -74,28 +74,58 @@ export class Grid extends CellContainer {
             .filter((cell) => this.isAvailableCell(cell))
     }
 
-    private getCellAt(cell: Cell, direction: DirectionEnum) {
-        return this.getCell(this.getIndex(cell.sum(Grid.POSITION_STRATEGIES.get(direction))));
-    }
-
     public getCellFromCoordinate(opponentPosition: ICoordinate): Cell {
         return this.getCell(this.getIndex(opponentPosition));
     }
 
-    public getCellNext(coordinate: ICoordinate): Cell[] {
-        let result = [];
-        for (let x = -1; x <= 1; x++) {
-            for (let y = -1; y <= 1; y++) {
-                if ((Math.abs(x) === 1 || Math.abs(y) === 1)) {
-                    const position = Position.sum(coordinate, {x, y});
-                    const cell = this.getCellFromCoordinate(position);
-                    if (cell) {
-                        result.push(cell);
-                    }
+    public getTorpedoArea(position: Position): Cell[] {
+        const result: Cell[] = [];
+
+        for (let x = -4; x <= 4; x++) {
+            const max = 4 - Math.abs(x);
+            for (let y = -max; y <= max; y++) {
+                const tmpCell = this.getCellFromCoordinate(position.sum({x, y}));
+                if (tmpCell && tmpCell.type === CellTypeEnum.SEA) {
+                    result.push(tmpCell);
                 }
             }
         }
         return result;
     }
 
+    public getTorpedoAreaWithoutDangerArea(position: Position): Cell[] {
+        const result: Cell[] = [];
+
+        for (let x = -4; x <= 4; x++) {
+            const max = 4 - Math.abs(x);
+            for (let y = -max; y <= max; y++) {
+                const tmpCell = this.getCellFromCoordinate(position.sum({x, y}));
+                if (tmpCell && tmpCell.type === CellTypeEnum.SEA && position.distance(tmpCell) > 1) {
+                    result.push(tmpCell);
+                }
+            }
+        }
+        return result;
+    }
+
+    public getDangerArea(coordinate: ICoordinate): Cell[] {
+        const position = new Position({x: coordinate.x, y: coordinate.y});
+        const result: Cell[] = [];
+
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                const tmpCell = this.getCellFromCoordinate(position.sum({x, y}));
+                if (tmpCell && tmpCell.type === CellTypeEnum.SEA) {
+                    result.push(tmpCell);
+                }
+            }
+        }
+
+        log(`danger area : {x: ${coordinate.x}, y: ${coordinate.y}}: ${result.length}`);
+        return result;
+    }
+
+    private getCellAt(cell: Cell, direction: DirectionEnum) {
+        return this.getCell(this.getIndex(cell.sum(Grid.POSITION_STRATEGIES.get(direction))));
+    }
 }
