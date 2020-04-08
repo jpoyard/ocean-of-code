@@ -20,7 +20,7 @@ export class OceanOfCodeComponent extends HTMLElement {
     private stats: Array<{ cell: Cell, stat: number }>;
     private pathFinder: PathFinder;
     private path: IPathNode[];
-    private area: Array<{cell: Cell, pathLength: number}>;
+    private area: Array<{ cell: Cell, pathLength: number }>;
 
     constructor() {
         super();
@@ -257,7 +257,7 @@ export class OceanOfCodeComponent extends HTMLElement {
             this.canvasCtx.fillStyle = this.TEXT_COLOR;
             this.canvasCtx.textAlign = "center";
             this.canvasCtx.textBaseline = 'middle';
-            this.canvasCtx.fillText(value!==undefined ? value.toString() : '-',
+            this.canvasCtx.fillText(value !== undefined ? value.toString() : '-',
                 OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 2,
                 OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2,
                 this.cellSize);
@@ -274,12 +274,14 @@ export class OceanOfCodeComponent extends HTMLElement {
     }
 
     private selectCell(event: MouseEvent) {
-        const x = Math.floor((event.offsetX - OceanOfCodeComponent.MARGE)/this.cellSize);
-        const y = Math.floor((event.offsetY - OceanOfCodeComponent.MARGE)/this.cellSize);
+        const x = Math.floor((event.offsetX - OceanOfCodeComponent.MARGE) / this.cellSize);
+        const y = Math.floor((event.offsetY - OceanOfCodeComponent.MARGE) / this.cellSize);
         const position = this.grid.getCellFromCoordinate({x, y});
 
-        // this.path = this.pathFinder.searchLongestPath(position);
-        this.area = this.grid.getDangerArea(position.coordinate).map(cell=>({cell, pathLength: position.pathLength(cell)}));
+        //this.pathFinder.defineStrategiesOrder(position);
+        //this.path = this.pathFinder.getMoveStrategies(position);
+        this.path = this.pathFinder.searchLongestPath(position);
+        //this.area = this.grid.getDangerArea(position.coordinate).map(cell=>({cell, pathLength: position.pathLength(cell)}));
 
         this.draw();
     }

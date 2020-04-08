@@ -3,7 +3,7 @@ import {Grid} from "./grid.class";
 import {ICoordinate, Position} from "./position.class";
 import {OrderEnum} from "./submarine.class";
 import {IMoveOrder, IOrder, ISurfaceOrder, ITorpedoOrder} from "./opponent-submarine.class";
-import {IMoveStrategy, MOVE_STRATEGIES_CLOCKWISE} from "./path-finder.class";
+import {IMoveStrategy, MOVE_STRATEGIES_ANTI_CLOCKWISE_SE} from "./path-finder.class";
 
 export interface IPositionsStats {
     cells: Cell[];
@@ -69,7 +69,7 @@ export class PathResolver {
         orders.forEach(order => {
             switch (order.type) {
                 case OrderEnum.MOVE:
-                    const moveStrategy = MOVE_STRATEGIES_CLOCKWISE
+                    const moveStrategy = MOVE_STRATEGIES_ANTI_CLOCKWISE_SE
                         .find(strategy => strategy.direction === ((order.order as IMoveOrder).direction));
                     this._moveScenarios.forEach(moveScenario => this.addMoveStrategy(moveScenario, moveStrategy));
                     this.updateMoveStrategies();
@@ -80,7 +80,7 @@ export class PathResolver {
                         .map(moveScenario => {
                             const moveScenarios: IMoveScenario[] = [];
                             moveScenarios.push(moveScenario); // silence 0
-                            MOVE_STRATEGIES_CLOCKWISE.map(moveStrategy => {
+                            MOVE_STRATEGIES_ANTI_CLOCKWISE_SE.map(moveStrategy => {
                                 let tmpScenario = (moveScenario);
                                 for (let length = 1; length <= 4; length++) {
                                     tmpScenario = this.addMoveStrategy(PathResolver.cloneMoveScenario(tmpScenario), moveStrategy);

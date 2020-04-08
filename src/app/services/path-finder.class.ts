@@ -1,12 +1,11 @@
 import {Cell, CellTypeEnum} from "./cell.class";
-import {IPathNode} from "./our-submarine.class";
+import {IPath, IPathNode} from "./our-submarine.class";
 import {Grid} from "./grid.class";
 import {ICoordinate} from "./position.class";
 
 export interface IMoveStrategy {
     move: ICoordinate;
-    direction: DirectionEnum,
-    rand: number;
+    direction: DirectionEnum
 }
 
 export enum DirectionEnum {
@@ -16,27 +15,37 @@ export enum DirectionEnum {
     WEST = 'W',
 }
 
-export const MOVE_STRATEGIES_CLOCKWISE: IMoveStrategy[] = [
+export const MOVE_STRATEGIES: IMoveStrategy[] = [
     {move: {x: 0, y: -1}, direction: DirectionEnum.NORTH},
     {move: {x: 1, y: 0}, direction: DirectionEnum.EST},
     {move: {x: 0, y: 1}, direction: DirectionEnum.SOUTH},
     {move: {x: -1, y: 0}, direction: DirectionEnum.WEST}
-]
-    .map(moveStrategy => ({...moveStrategy, rand: Math.floor(Math.random() * 10)}))
-    .sort((a, b) => a.rand - b.rand);
+];
 
-export const MOVE_STRATEGIES_ANTICLOCKWISE: IMoveStrategy[] = MOVE_STRATEGIES_CLOCKWISE.reverse();
+function createMoveAntiClockwiseStrategies(order: DirectionEnum[]): IMoveStrategy[] {
+    const orderMap = order.reduce((acc, cur, index) => acc.set(cur, index), new Map<DirectionEnum, number>());
+    return [...MOVE_STRATEGIES]
+        .sort((a, b) => orderMap.get(b.direction) - orderMap.get(a.direction));
+}
+
+export const MOVE_STRATEGIES_ANTI_CLOCKWISE_NW: IMoveStrategy[] = createMoveAntiClockwiseStrategies(
+    [DirectionEnum.SOUTH, DirectionEnum.EST, DirectionEnum.NORTH, DirectionEnum.WEST]
+);
+export const MOVE_STRATEGIES_ANTI_CLOCKWISE_NE: IMoveStrategy[] = createMoveAntiClockwiseStrategies(
+    [DirectionEnum.WEST, DirectionEnum.SOUTH, DirectionEnum.EST, DirectionEnum.NORTH]
+);
+export const MOVE_STRATEGIES_ANTI_CLOCKWISE_SW: IMoveStrategy[] = createMoveAntiClockwiseStrategies(
+    [DirectionEnum.EST, DirectionEnum.NORTH, DirectionEnum.WEST, DirectionEnum.SOUTH]
+);
+export const MOVE_STRATEGIES_ANTI_CLOCKWISE_SE: IMoveStrategy[] = createMoveAntiClockwiseStrategies(
+    [DirectionEnum.NORTH,DirectionEnum.WEST, DirectionEnum.SOUTH,  DirectionEnum.EST]
+);
 
 export class PathFinder {
-    private _isClockwise = false;
+    private _directionStrategies: IMoveStrategy[] = MOVE_STRATEGIES_ANTI_CLOCKWISE_NE;
+    private _visitedCells = new Set<Cell>();
 
     constructor(private _grid: Grid) {
-    }
-
-    private _visitedCells = new Map<number, Cell>();
-
-    public get visitedCells(): Cell[] {
-        return Array.from(this._visitedCells.values());
     }
 
     public get grid(): Grid {
@@ -44,17 +53,16 @@ export class PathFinder {
     }
 
     public addVisitedCell(cell: Cell): void {
-        this._visitedCells.set(cell.index, cell);
+        this._visitedCells.add(cell);
     }
 
     public clearVisitedCell(): void {
         this._visitedCells.clear();
     }
 
-    public isVisitedCell(index: number) {
-        return this._visitedCells.has(index);
+    public isVisitedCell(cell: Cell): boolean {
+        return this._visitedCells.has(cell);
     }
-
 
     public searchStartCell(): { path: IPathNode[], position: Cell } {
         let availableStartCells = this._grid.cells
@@ -68,12 +76,11 @@ export class PathFinder {
         let result: IPathNode[] = [];
         let pathNodes: IPathNode[] = [];
 
-        if (this.grid.isAvailableCell(startCell) && !this.isVisitedCell(endCell.index) && this.grid.isAvailableCell(endCell)) {
+        if (this.grid.isAvailableCell(startCell) && !this.isVisitedCell(endCell) && this.grid.isAvailableCell(endCell)) {
             pathNodes.push({cell: startCell});
 
-            let availableCells: Map<number, Cell> = this.grid.getAvailableCells()
-                .filter((c) => !this.isVisitedCell(c.index) && !startCell.equals(c))
-                .reduce((acc, cur) => acc.set(cur.index, cur), new Map<number, Cell>());
+            let availableCells: Set<Cell> = new Set<Cell>(this.grid.getAvailableCells()
+                .filter((c) => !this.isVisitedCell(c) && startCell !== c));
             let maxIteration = availableCells.size * 4;
             let iteration = 0;
 
@@ -83,7 +90,7 @@ export class PathFinder {
 
                 if (currentPathNode.cell !== endCell) {
                     if (currentPathNode.paths == null) {
-                        currentPathNode.paths = this.initializePath(currentPathNode, availableCells)
+                        currentPathNode.paths = this.getAvailablePaths(currentPathNode, availableCells)
                             .filter(p => p.cell.pathLength(endCell) <= pathLength);
                     } else if (currentPathNode.cell.equals(endCell)) {
                         currentPathNode.paths = [];
@@ -91,12 +98,12 @@ export class PathFinder {
 
                     if (currentPathNode.paths.length > 0) {
                         const newPath = currentPathNode.paths.pop();
-                        availableCells.delete(newPath.cell.index);
+                        availableCells.delete(newPath.cell);
                         currentPathNode.direction = newPath.direction;
                         pathNodes.push({cell: newPath.cell});
                     } else {
                         const path = pathNodes.pop();
-                        availableCells.set(path.cell.index, path.cell);
+                        availableCells.add(path.cell);
                     }
                 } else {
                     if (result.length === 0 || pathNodes.length <= result.length) {
@@ -106,7 +113,7 @@ export class PathFinder {
                         }));
                     }
                     const path = pathNodes.pop();
-                    availableCells.set(path.cell.index, path.cell);
+                    availableCells.add(path.cell);
                 }
                 iteration++;
             } while (pathNodes.length > 0 && iteration <= maxIteration);
@@ -120,8 +127,7 @@ export class PathFinder {
 
         pathNodes.push({cell: startCell});
 
-        let availableCells: Map<number, Cell> = this.grid.getAvailableCells()
-            .reduce((acc, cur) => acc.set(cur.index, cur), new Map<number, Cell>());
+        let availableCells: Set<Cell> = new Set<Cell>(this.grid.getAvailableCells());
 
         do {
             let currentPathNode = pathNodes[pathNodes.length - 1];
@@ -129,7 +135,7 @@ export class PathFinder {
 
             if (currentPathNode.cell !== endCell) {
                 if (!currentPathNode.paths) {
-                    currentPathNode.paths = this.initializePath(currentPathNode, availableCells)
+                    currentPathNode.paths = this.getAvailablePaths(currentPathNode, availableCells)
                         .filter(p => p.cell.pathLength(endCell) <= pathLength);
                 } else if (currentPathNode.cell.equals(endCell)) {
                     currentPathNode.paths = [];
@@ -137,12 +143,12 @@ export class PathFinder {
 
                 if (currentPathNode.paths.length > 0) {
                     const newPath = currentPathNode.paths.pop();
-                    availableCells.delete(newPath.cell.index);
+                    availableCells.delete(newPath.cell);
                     currentPathNode.direction = newPath.direction;
                     pathNodes.push({cell: newPath.cell});
                 } else {
                     const path = pathNodes.pop();
-                    availableCells.set(path.cell.index, path.cell);
+                    availableCells.add(path.cell);
                 }
             } else {
                 if (result.length === 0 || pathNodes.length <= result.length) {
@@ -152,7 +158,7 @@ export class PathFinder {
                     }));
                 }
                 const path = pathNodes.pop();
-                availableCells.set(path.cell.index, path.cell);
+                availableCells.add(path.cell);
             }
         } while (pathNodes.length > 0);
         return result;
@@ -161,14 +167,11 @@ export class PathFinder {
     public searchLongestPath(cell: Cell): IPathNode[] {
         let result: IPathNode[] = [];
         let pathNodes: IPathNode[] = [];
-        this._isClockwise = cell.x < this.grid.width/2;
 
         if (this.grid.isAvailableCell(cell)) {
             pathNodes.push({cell});
-
-            let availableCells: Map<number, Cell> = this.grid.getAvailableCells()
-                .filter((c) => !this.isVisitedCell(c.index) && !cell.equals(c))
-                .reduce((acc, cur) => acc.set(cur.index, cur), new Map<number, Cell>());
+            let availableCells: Set<Cell> = new Set<Cell>(
+                this.grid.getAvailableCells().filter((c) => !this.isVisitedCell(c) && cell !== c));
             let minLength = Math.floor(availableCells.size - availableCells.size / 10);
             let maxIteration = availableCells.size * 32;
 
@@ -177,12 +180,13 @@ export class PathFinder {
                 let currentPathNode = pathNodes[pathNodes.length - 1];
 
                 if (currentPathNode.paths == null) {
-                    currentPathNode.paths = this.initializePath(currentPathNode, availableCells)
+                    this.defineStrategiesOrder(currentPathNode.cell);
+                    currentPathNode.paths = this.getAvailablePaths(currentPathNode, availableCells)
                 }
 
                 if (currentPathNode.paths.length > 0) {
                     let newPath = currentPathNode.paths.pop();
-                    availableCells.delete(newPath.cell.index);
+                    availableCells.delete(newPath.cell);
                     currentPathNode.direction = newPath.direction;
                     pathNodes.push({cell: newPath.cell});
                 } else {
@@ -193,7 +197,7 @@ export class PathFinder {
                         }));
                     }
                     const path = pathNodes.pop();
-                    availableCells.set(path.cell.index, path.cell);
+                    availableCells.add(path.cell);
                 }
                 iteration++;
             }
@@ -202,33 +206,35 @@ export class PathFinder {
         return result;
     }
 
-    public getMoveStrategies(nextPosition: Cell): Array<IMoveStrategy & { index: number }> {
-        return this.getStrategies()
+    public getMoveStrategies(nextPosition: Cell): Array<IMoveStrategy & { cell: Cell }> {
+        return this._directionStrategies
             .map(moveStrategy => ({
                 ...moveStrategy,
-                index: this.grid.getIndex(nextPosition.sum(moveStrategy.move))
+                cell: this.grid.getCellFromCoordinate(nextPosition.sum(moveStrategy.move))
             }))
-            .filter(moveStrategy => this.grid.isIndexValid(moveStrategy.index))
+            .filter(moveStrategy => !!moveStrategy.cell)
     }
 
-    protected getStrategies(): IMoveStrategy[] {
-        if (this._isClockwise) {
-            return MOVE_STRATEGIES_CLOCKWISE;
+    public defineStrategiesOrder(position: Cell): void {
+        if (position.x < this.grid.width / 2 && position.y < this.grid.height / 2) {
+            this._directionStrategies = MOVE_STRATEGIES_ANTI_CLOCKWISE_NW;
+        } else if (position.x >= this.grid.width / 2 && position.y < this.grid.height / 2) {
+            this._directionStrategies = MOVE_STRATEGIES_ANTI_CLOCKWISE_NE;
+        } else if (position.x < this.grid.width / 2 && position.y >= this.grid.height / 2) {
+            this._directionStrategies = MOVE_STRATEGIES_ANTI_CLOCKWISE_SW;
         } else {
-            return MOVE_STRATEGIES_ANTICLOCKWISE;
+            this._directionStrategies = MOVE_STRATEGIES_ANTI_CLOCKWISE_SE;
         }
     }
 
-    private isAvailableStartCell(cell: Cell) {
+    private isAvailableStartCell(cell: Cell): boolean {
         return cell.type === CellTypeEnum.SEA &&
             (((cell.x === 0 || cell.x === this.grid.width - 1) &&
                 (cell.y === 0 || cell.y === this.grid.height - 1)) || cell.equals(this.grid.middle));
     }
 
-    private initializePath(currentPathNode: IPathNode, availableCells: Map<number, Cell>) {
+    private getAvailablePaths(currentPathNode: IPathNode, availableCells: Set<Cell>): IPath[] {
         return this.getMoveStrategies(currentPathNode.cell)
-            .filter(strategy => availableCells.has(strategy.index))
-            .map(strategy => ({cell: this.grid.getCell(strategy.index), direction: strategy.direction}))
-            .filter(strategy => strategy.cell.type === CellTypeEnum.SEA);
+            .filter(strategy => availableCells.has(strategy.cell));
     }
 }

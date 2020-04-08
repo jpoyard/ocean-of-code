@@ -91,13 +91,13 @@ describe(PathFinder.name, () => {
             const sample = GRID_SAMPLE[0];
             const grid = new Grid(sample.width, sample.height, sample.grid);
             const pathFinder = new PathFinder(grid);
+            const cell = grid.getCell(0);
 
             // When
-            pathFinder.addVisitedCell(grid.getCell(0));
+            pathFinder.addVisitedCell(cell);
 
             // Then
-            expect(pathFinder.visitedCells.length).toBe(1);
-            expect(pathFinder.isVisitedCell(0)).toBe(true);
+            expect(pathFinder.isVisitedCell(cell)).toBe(true);
         });
 
 
@@ -106,14 +106,14 @@ describe(PathFinder.name, () => {
             const sample = GRID_SAMPLE[0];
             const grid = new Grid(sample.width, sample.height, sample.grid);
             const pathFinder = new PathFinder(grid);
-            pathFinder.addVisitedCell(grid.getCell(0));
+            const cell = grid.getCell(0);
+            pathFinder.addVisitedCell(cell);
 
             // When
             pathFinder.clearVisitedCell();
 
             // Then
-            expect(pathFinder.visitedCells.length).toBe(0);
-            expect(pathFinder.isVisitedCell(0)).toBe(false);
+            expect(pathFinder.isVisitedCell(cell)).toBe(false);
         });
     });
 });

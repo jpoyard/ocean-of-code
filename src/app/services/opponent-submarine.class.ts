@@ -109,7 +109,6 @@ export const ORDER_PARSER_STRATEGIES: IOrderParserStrategy[] = [
     }
 ];
 
-
 export class OpponentSubmarine extends Submarine {
     public pathResover: PathResolver;
 
