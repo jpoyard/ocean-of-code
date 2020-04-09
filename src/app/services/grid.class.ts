@@ -2,10 +2,10 @@ import {Cell, CellTypeEnum} from "./cell.class";
 import {CellContainer} from "./cell-container.class";
 import {Surface} from "./surface.class";
 import {ICoordinate, Position} from "./position.class";
-import {DirectionEnum, MOVE_STRATEGIES_ANTI_CLOCKWISE_SE} from "./path-finder.class";
+import {DirectionEnum, MOVE_STRATEGIES_SE} from "./path-finder.class";
 
 export class Grid extends CellContainer {
-    private static readonly POSITION_STRATEGIES = MOVE_STRATEGIES_ANTI_CLOCKWISE_SE.reduce(
+    private static readonly POSITION_STRATEGIES = MOVE_STRATEGIES_SE.reduce(
         (acc, cur) => acc.set(cur.direction, cur.move),
         new Map<DirectionEnum, ICoordinate>()
     );

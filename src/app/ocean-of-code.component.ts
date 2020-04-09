@@ -242,6 +242,10 @@ export class OceanOfCodeComponent extends HTMLElement {
             .filter(cell => cell.type === CellTypeEnum.ISLAND)
             .forEach(cell => this.drawIsland(cell));
 
+        if(!this.path && !this.area){
+            this.path =this.pathFinder.searchStartCell().path;
+        }
+
         if (this.path) {
             this.path.forEach((node, index) => this.drawText(index, node.cell))
         } else if (this.area) {
@@ -253,6 +257,14 @@ export class OceanOfCodeComponent extends HTMLElement {
 
     private drawText(value: any, cell: Cell) {
         if (cell) {
+            this.canvasCtx.fillStyle = `rgb(${255-Number.parseInt(value)},${255-Number.parseInt(value)},255)`;
+            this.canvasCtx.fillRect(
+                OceanOfCodeComponent.MARGE +cell.x*this.cellSize,
+                OceanOfCodeComponent.MARGE +cell.y*this.cellSize,
+                this.cellSize,
+                this.cellSize
+            );
+            this.canvasCtx.stroke();
             this.canvasCtx.font = "1em Arial";
             this.canvasCtx.fillStyle = this.TEXT_COLOR;
             this.canvasCtx.textAlign = "center";
@@ -261,6 +273,7 @@ export class OceanOfCodeComponent extends HTMLElement {
                 OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 2,
                 OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2,
                 this.cellSize);
+
         }
     }
 

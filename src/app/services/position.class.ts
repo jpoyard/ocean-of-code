@@ -1,5 +1,3 @@
-import {Cell} from "./cell.class";
-
 export interface ICoordinate {
     x: number;
     y: number;
@@ -44,7 +42,7 @@ export class Position implements ICoordinate {
         };
     }
 
-    public static getMinMax(...coordinates: ICoordinate[]): {min:ICoordinate, max: ICoordinate} {
+    public static getMinMax(...coordinates: ICoordinate[]): { min: ICoordinate, max: ICoordinate } {
         return coordinates.reduce<{ min: ICoordinate, max: ICoordinate }>(
             (acc, cur) => {
                 acc.min = acc.min ? {
@@ -56,7 +54,7 @@ export class Position implements ICoordinate {
                     y: Math.max(acc.max.y, cur.y)
                 } : cur;
                 return acc;
-            }, { min: coordinates[0], max: coordinates[0]}
+            }, {min: coordinates[0], max: coordinates[0]}
         );
     }
 
@@ -98,5 +96,9 @@ export class Position implements ICoordinate {
 
     public pathLength(coordinates: ICoordinate): number {
         return Position.pathLength(this.coordinate, coordinates);
+    }
+
+    public toString(): string {
+        return `{x:${this.x},y:${this.y}}`;
     }
 }
