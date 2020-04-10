@@ -160,6 +160,7 @@ export class PathFinder {
         return result;
     }
 
+    public history: IPath[][];
     public searchLongestPath(cell: Cell): IPathNode[] {
         let result: IPathNode[] = [];
 
@@ -181,6 +182,9 @@ export class PathFinder {
 
             let iteration = 0;
             do {
+                if (this.history) {
+                    this.history.push(pathNodes.map(p => ({cell: p.cell, direction: p.direction})));
+                }
                 let currentPathNode = pathNodes[pathNodes.length - 1];
 
                 if (!currentPathNode.paths) {

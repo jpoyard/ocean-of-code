@@ -114,7 +114,7 @@ export class OpponentSubmarine extends Submarine {
 
     constructor(id: number, grid: Grid) {
         super(id, grid);
-        this.pathResover = new PathResolver(grid);
+        this.pathResover = new PathResolver(grid, log);
     }
 
     public static parse(orders: string[]): IOrder[] {

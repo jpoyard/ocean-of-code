@@ -4,11 +4,15 @@ import {GRID_PROPERTIES} from "./GRID_PROPERTIES";
 import {Cell, CellTypeEnum} from "./services/cell.class";
 import {DirectionEnum, PathFinder} from "./services/path-finder.class";
 import {IPathNode} from "./services/our-submarine.class";
+import {PathResolver} from "./services/path-resolver.class";
+import {OrderEnum} from "./services/submarine.class";
 
 export class OceanOfCodeComponent extends HTMLElement {
     public static readonly MARGE = 6;
     private readonly TEXT_COLOR = "#000";
     private readonly SURFACE_COLOR = "#fffff";
+    private readonly POSITIONS_LINE_COLOR = this.TEXT_COLOR;
+    private readonly STARTS_LINE_COLOR = 'red';
     private readonly LINE_COLOR = "#c8e0ff";
     private readonly SEA_COLOR = "#569dfa";
     private readonly ISLAND_COLOR = "#FFC107";
@@ -20,6 +24,7 @@ export class OceanOfCodeComponent extends HTMLElement {
     private stats: Array<{ cell: Cell, stat: number }>;
     private pathFinder: PathFinder;
     private path: IPathNode[];
+    private pathResolver: PathResolver;
     private area: Array<{ cell: Cell, pathLength: number }>;
 
     constructor() {
@@ -31,6 +36,7 @@ export class OceanOfCodeComponent extends HTMLElement {
         window.addEventListener('resize', () => this.resize());
         this.resize();
 
+        this.pathResolver = new PathResolver(this.grid, console.log);
         this.pathFinder = new PathFinder(this.grid);
 
         window.onkeydown = (event: KeyboardEvent) => {
@@ -192,10 +198,68 @@ export class OceanOfCodeComponent extends HTMLElement {
     }
 
     private clear() {
-        this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.canvasCtx.clearRect(0, 0,
+            this.canvas.width + OceanOfCodeComponent.MARGE,
+            this.canvas.height + OceanOfCodeComponent.MARGE);
     }
 
     private drawGrid() {
+        this.drawOcean();
+        this.drawSurfaceLines();
+        this.drawIslands();
+
+        if (!this.path && !this.area) {
+            // this.pathFinder.history = []; // TO Display calculation
+            const position = this.pathFinder.searchStartCell().position;
+            this.path = this.pathFinder.searchLongestPath(position);
+            this.pathFinder.history = this.path.map((pathNode, index, array) => {
+                return array.slice(0, index).map(p => ({cell: p.cell, direction: p.direction}));
+            });
+            this.pathResolver = new PathResolver(this.grid, () => {
+            });
+            this.path = this.pathFinder.history.shift();
+        }
+
+        if (this.pathFinder.history && this.pathFinder.history.length > 0) {
+            if (this.path && this.path.length > 0) {
+                if (this.path.length % 10 === 0) {
+                    this.pathResolver.applyMoveOrders([{
+                        type: OrderEnum.SILENCE,
+                        order: {}
+                    }])
+                }
+                performance.mark('resolver1');
+                this.pathResolver.applyMoveOrders([{
+                    type: OrderEnum.MOVE,
+                    order: {direction: this.path[this.path.length - 1].direction}
+                }]);
+                performance.mark('resolver2');
+                performance.measure("duration", 'resolver1', 'resolver2');
+                const duration = (performance.getEntriesByType("measure")[0].duration);
+                console.log(this.path.length, duration, this.pathResolver.getPositionsStats());
+                performance.clearMarks();
+                performance.clearMeasures();
+            }
+            this.path = this.pathFinder.history.shift();
+            if (this.pathFinder.history.length > 0) {
+                setTimeout(() => this.draw(), 500);
+            }
+        }
+
+        if (this.path) {
+            this.path.forEach((node, index) => this.drawText(index, node.cell))
+        } else if (this.area) {
+            this.area.forEach((area) => this.drawText(area.pathLength, area.cell))
+        } else {
+            this.stats.forEach(stat => this.drawText(stat.stat, stat.cell));
+        }
+
+        const {cells, starts} = this.pathResolver.getPositionsStats();
+        this.strokeCells(starts, this.STARTS_LINE_COLOR, 2);
+        this.strokeCells(cells, this.POSITIONS_LINE_COLOR);
+    }
+
+    private drawOcean() {
         // DRAW OCEAN
         this.canvasCtx.fillStyle = this.SEA_COLOR;
         this.canvasCtx.fillRect(
@@ -204,8 +268,13 @@ export class OceanOfCodeComponent extends HTMLElement {
             this.cellSize * this.grid.width,
             this.cellSize * this.grid.height);
 
+        this.drawOceanLines();
+    }
+
+    private drawOceanLines() {
         // DRAW LINE
         this.canvasCtx.beginPath();
+        this.canvasCtx.lineWidth = 1;
         this.canvasCtx.strokeStyle = this.LINE_COLOR;
 
         for (let i = 0; i <= this.grid.width; i++) {
@@ -215,15 +284,20 @@ export class OceanOfCodeComponent extends HTMLElement {
 
                 this.canvasCtx.moveTo(OceanOfCodeComponent.MARGE, i * this.cellSize + OceanOfCodeComponent.MARGE);
                 this.canvasCtx.lineTo(this.cellSize * this.grid.width + OceanOfCodeComponent.MARGE, i * this.cellSize + OceanOfCodeComponent.MARGE);
-
             }
         }
         this.canvasCtx.stroke();
         this.canvasCtx.closePath();
+    }
 
+    private strokeCells(cells: Cell[], color: string, resize: number = 0) {
+        cells.forEach(cell => this.strokeCell(cell, color, resize))
+    }
+
+    private drawSurfaceLines() {
         // DRAW SURFACE LINE
-        this.canvasCtx.lineWidth = 2;
         this.canvasCtx.beginPath();
+        this.canvasCtx.lineWidth = 2;
         this.canvasCtx.strokeStyle = this.SURFACE_COLOR;
         for (let i = 0; i <= this.grid.width; i++) {
             if (i % 5 === 0) {
@@ -236,35 +310,19 @@ export class OceanOfCodeComponent extends HTMLElement {
         }
         this.canvasCtx.stroke();
         this.canvasCtx.closePath();
+    }
 
+    private drawIslands() {
         // DRAW ISLAND
         this.grid.cells
             .filter(cell => cell.type === CellTypeEnum.ISLAND)
-            .forEach(cell => this.drawIsland(cell));
-
-        if(!this.path && !this.area){
-            this.path =this.pathFinder.searchStartCell().path;
-        }
-
-        if (this.path) {
-            this.path.forEach((node, index) => this.drawText(index, node.cell))
-        } else if (this.area) {
-            this.area.forEach((area, index) => this.drawText(area.pathLength, area.cell))
-        } else {
-            this.stats.forEach(stat => this.drawText(stat.stat, stat.cell));
-        }
+            .forEach(cell => this.fillCell(cell, this.ISLAND_COLOR));
     }
 
     private drawText(value: any, cell: Cell) {
         if (cell) {
-            this.canvasCtx.fillStyle = `rgb(${255-Number.parseInt(value)},${255-Number.parseInt(value)},255)`;
-            this.canvasCtx.fillRect(
-                OceanOfCodeComponent.MARGE +cell.x*this.cellSize,
-                OceanOfCodeComponent.MARGE +cell.y*this.cellSize,
-                this.cellSize,
-                this.cellSize
-            );
-            this.canvasCtx.stroke();
+            const color = `rgb(${255 - Number.parseInt(value)},${255 - Number.parseInt(value)},255)`;
+            this.fillCell(cell, color);
             this.canvasCtx.font = "1em Arial";
             this.canvasCtx.fillStyle = this.TEXT_COLOR;
             this.canvasCtx.textAlign = "center";
@@ -273,12 +331,20 @@ export class OceanOfCodeComponent extends HTMLElement {
                 OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 2,
                 OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2,
                 this.cellSize);
-
         }
     }
 
-    private drawIsland(cell: Cell) {
-        this.canvasCtx.fillStyle = this.ISLAND_COLOR;
+    private strokeCell(cell: Cell, color: string, resize: number = 0) {
+        this.canvasCtx.strokeStyle = color;
+        this.canvasCtx.strokeRect(
+            OceanOfCodeComponent.MARGE + cell.x * this.cellSize + resize,
+            OceanOfCodeComponent.MARGE + cell.y * this.cellSize + resize,
+            this.cellSize - resize*2,
+            this.cellSize - resize*2);
+    }
+
+    private fillCell(cell: Cell, color: string) {
+        this.canvasCtx.fillStyle = color;
         this.canvasCtx.fillRect(
             OceanOfCodeComponent.MARGE + cell.x * this.cellSize,
             OceanOfCodeComponent.MARGE + cell.y * this.cellSize,
@@ -291,6 +357,7 @@ export class OceanOfCodeComponent extends HTMLElement {
         const y = Math.floor((event.offsetY - OceanOfCodeComponent.MARGE) / this.cellSize);
         const position = this.grid.getCellFromCoordinate({x, y});
 
+        this.pathFinder.history = undefined;
         //this.pathFinder.defineStrategiesOrder(position);
         //this.path = this.pathFinder.getMoveStrategies(position);
         this.path = this.pathFinder.searchLongestPath(position);

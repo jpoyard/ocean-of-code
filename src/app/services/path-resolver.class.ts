@@ -26,7 +26,7 @@ export class PathResolver {
     private _startPositions: Cell[];
     private _moveScenarios: IMoveScenario[];
 
-    constructor(private grid: Grid) {
+    constructor(private grid: Grid, public log: (...arg)=>void) {
         this._startPositions = this.grid.getAvailableCells();
         this._moveScenarios = [];
     }
@@ -60,7 +60,7 @@ export class PathResolver {
     }
 
     public applyMoveOrders(orders: IOrder[]) {
-        log({orders: JSON.stringify(orders)});
+        this.log({orders: JSON.stringify(orders)});
 
         if (this._moveScenarios.length === 0) {
             this._moveScenarios.push(this.createMoveScenario());
@@ -130,7 +130,8 @@ export class PathResolver {
             )
             .reduce((acc, cur) => [...acc, ...cur], []);
         const mergedcell = Cell.removeDuplicate(cells);
-        log('duplicate: ', cells.length - mergedcell.length);
+
+        this.log('duplicate: ', cells.length - mergedcell.length);
         return mergedcell;
     }
 
@@ -329,7 +330,7 @@ export class PathResolver {
     }
 
     private updateMoveStrategies(): void {
-        // log('Before',{moveScenarios: this._moveScenarios.length});
+        this.log('Before', {moveScenarios: this._moveScenarios.length});
         this._moveScenarios = this._moveScenarios.filter(
             scenario => scenario.paths.size > 0
         );
@@ -339,7 +340,7 @@ export class PathResolver {
                     .some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
-        // log('After',{moveScenarios: this._moveScenarios.length});
+        this.log('After',{moveScenarios: this._moveScenarios.length});
     }
 
 

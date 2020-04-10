@@ -40,8 +40,6 @@ export class Cell extends Position {
             return acc.set(cur, counter + 1);
         }, new Map<Cell, number>());
 
-        log(Array.from(tmpCellMap.entries()).map(e => `${e[0].toString()}=${e[1]}`).join(','));
-
         result = Array.from(tmpCellMap.keys());
         // let tmpCells = cells;
         // while (tmpCells.length > 0) {

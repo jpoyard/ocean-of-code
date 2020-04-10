@@ -35,8 +35,20 @@ export interface ISonar {
     result: SonarResultEnum
 }
 
+export enum PriorityEnum {
+    TORPEDO_0 = 0,
+    MOVE = 1,
+    SURFACE = 1,
+    TORPEDO_1 = 2,
+    MINE = 2,
+    SILENCE = 3,
+    TRIGGER = 4,
+    SONAR = 5,
+    MSG = 6
+}
+
 export interface IAction {
-    priority: number,
+    priority: PriorityEnum,
     order: string
 }
 
@@ -47,7 +59,7 @@ export class OurSubmarine extends Submarine {
         result: SonarResultEnum.NONE
     };
     private _mines: Cell[] = [];
-    private _previousAttacks: Array<{ order: OrderEnum, cell: ICoordinate }> = [];
+    private _previousAttacks: Array<{ priority: PriorityEnum, order: OrderEnum, cell: ICoordinate }> = [];
     private _pathFinder: PathFinder;
     private _positionsStats: IPositionsStats;
     private _opponentPosition: Cell;
@@ -94,7 +106,7 @@ export class OurSubmarine extends Submarine {
 
     private static sendMessage(message: string): IAction {
         return {
-            priority: 3,
+            priority: PriorityEnum.MSG,
             order: `${OrderEnum.MSG} ${message}`
         };
     }
@@ -154,32 +166,31 @@ export class OurSubmarine extends Submarine {
 
         if (this._path.length === 0 || !this._path[0].direction) {
             this._pathFinder.clearVisitedCell();
-            result.push({priority: 1, order: OrderEnum.SURFACE});
+            result.push({priority: PriorityEnum.SURFACE, order: OrderEnum.SURFACE});
             this._path = this._pathFinder.searchLongestPath(this.position);
         } else {
-            if (this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack || this.turn % 20 >= 2)) {
-                this.silenceMove(torpedoAttack, result);
-            }
             const power = this.nextPower(!!torpedoAttack);
             let direction = this._path.shift().direction;
-            result.push({priority: 1, order: `${OrderEnum.MOVE} ${direction}${power ? ' ' + power : ''}`});
+            result.push({priority: PriorityEnum.MOVE, order: `${OrderEnum.MOVE} ${direction}${power ? ' ' + power : ''}`});
+            if (this._path.length > 5 && this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack)) {
+                result.push(this.silenceMove());
+            }
         }
         return result
     }
 
-    private silenceMove(torpedoAttack: { order: OrderEnum; cell: ICoordinate }, result: IAction[]) {
-        let checkDistanceFn = torpedoAttack ? (cell) => cell.pathLength(torpedoAttack.cell) <= 4 : () => true;
+    private silenceMove(): IAction {
         let direction = DirectionEnum.WEST;
         let length = 0;
         if (this._path.length > 4) {
             length = 1;
             direction = this._path.shift().direction;
-            while (this._path.length > 0 && direction === this._path[0].direction && length < 4 && checkDistanceFn(this._path[0].cell)) {
+            while (this._path.length > 0 && direction === this._path[0].direction && length < 4) {
                 this._pathFinder.addVisitedCell(this._path.shift().cell);
                 length++;
             }
         }
-        result.push({priority: 1, order: `${OrderEnum.SILENCE} ${direction} ${length}`});
+        return ({priority: PriorityEnum.SILENCE, order: `${OrderEnum.SILENCE} ${direction} ${length}`});
     }
 
     private getOtherActions(): IAction[] {
@@ -222,7 +233,7 @@ export class OurSubmarine extends Submarine {
         } else {
             result.push(OurSubmarine.sendMessage(`SEARCH: P:${this._positionsStats.cells.length} / M:${this._positionsStats.numberOfMoves} / S:${this._positionsStats.surfaceStats.size}`));
 
-            if ((this.cooldown.sonar === 0) && (this._positionsStats.cells.length > 5)) {
+            if (this.cooldown.sonar === 0) {
                 result.push(this.useSonar());
             }
             /*
@@ -253,20 +264,22 @@ export class OurSubmarine extends Submarine {
                         ...mineStrategy,
                         score: mineStrategy.cell.distance(this._opponentPosition)
                     }))
-                    .filter(ms => !this._mines.includes(ms.cell))
+                    .filter(ms => this._mines.every(mine => mine.distance(ms.cell) > 2))
                     .sort((a, b) => b.score - a.score)
             }
-            const mineStrategie = mineStrategies[0];
-            log({
-                mine: {
-                    direction: mineStrategie.direction,
-                    cell: mineStrategie.cell.coordinate,
-                    nextPosition: nextPosition.coordinate,
-                    move: mineStrategie.move
-                }
-            });
-            result = ({priority: 2, order: `${OrderEnum.MINE} ${mineStrategie.direction}`});
-            this._mines.push(mineStrategie.cell);
+            if (mineStrategies.length > 0) {
+                const mineStrategie = mineStrategies[0];
+                log({
+                    mine: {
+                        direction: mineStrategie.direction,
+                        cell: mineStrategie.cell.coordinate,
+                        nextPosition: nextPosition.coordinate,
+                        move: mineStrategie.move
+                    }
+                });
+                result = ({priority: PriorityEnum.MINE, order: `${OrderEnum.MINE} ${mineStrategie.direction}`});
+                this._mines.push(mineStrategie.cell);
+            }
         }
         return result;
     }
@@ -275,22 +288,21 @@ export class OurSubmarine extends Submarine {
         let result: IAction;
         log({mines: this._mines.map(m => m.coordinate)});
         const dangerArea = new Set([...this.grid.getDangerArea(this.position), ...this.grid.getDangerArea(nextPosition)]);
-        let targetedMines = [];
-        if (this._positionsStats.cells.length > 1) {
-            targetedMines = this._mines
-                .filter(m => this._positionsStats.cells.includes(m))
-                .filter(m => !dangerArea.has(m));
-        } else if (this._positionsStats.cells.length === 1) {
-            targetedMines = this._mines
-                .filter(m => m.pathLength(this._opponentPosition)<=1)
-                .filter(m => !dangerArea.has(m));
-        }
+        let targetedMines = this._mines
+            .map(mine => {
+                const mineDangerArea = this.grid.getDangerArea(mine);
+                const cells = this._positionsStats.cells.filter(c => mineDangerArea.includes(c));
+                return ({cells, mine})
+            })
+            .filter(m => m.cells.length > 1)
+            .filter(m => !dangerArea.has(m.mine))
+            .map(m => m.mine);
 
         if (targetedMines.length > 0) {
             const mine = targetedMines[0];
             this._mines = this._mines.filter(m => m !== mine);
-            this._previousAttacks.push({order: OrderEnum.MINE, cell: mine});
-            result = ({priority: 2, order: `${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`});
+            this._previousAttacks.push({priority: PriorityEnum.TRIGGER, order: OrderEnum.MINE, cell: mine});
+            result = ({priority: PriorityEnum.TRIGGER, order: `${OrderEnum.TRIGGER} ${mine.x} ${mine.y}`});
         }
 
         return result;
@@ -299,7 +311,7 @@ export class OurSubmarine extends Submarine {
     private useSonar(): IAction {
         let result: IAction;
         this._sonar.surface = undefined;
-        if (this._positionsStats.cells.length > 10) {
+        if (this._positionsStats.cells.length > 10 && this._positionsStats.surfaceStats.size > 3) {
             const surfaces = Array.from(this._positionsStats.surfaceStats.entries())
                 .sort((a, b) => b[1].length - a[1].length);
             if (surfaces.length > 1) {
@@ -310,7 +322,7 @@ export class OurSubmarine extends Submarine {
         }
 
         if (this._sonar.surface) {
-            result = ({priority: 2, order: `${OrderEnum.SONAR} ${this._sonar.surface}`})
+            result = ({priority: PriorityEnum.SONAR, order: `${OrderEnum.SONAR} ${this._sonar.surface}`})
         }
         return result;
     }
@@ -332,19 +344,23 @@ export class OurSubmarine extends Submarine {
         let dangerOpponentArea = this.grid.getDangerArea(targetCell);
         let torpedoInfo: { cell: Cell, priority: number };
         if (torpedoAreaBeforeMove.includes(targetCell)) {
-            torpedoInfo = {cell: targetCell, priority: 0};
+            torpedoInfo = {cell: targetCell, priority: PriorityEnum.TORPEDO_0};
         } else if (torpedoAreaAfterMove.includes(targetCell)) {
-            torpedoInfo = {cell: targetCell, priority: 2};
+            torpedoInfo = {cell: targetCell, priority: PriorityEnum.TORPEDO_1};
         } else if (dangerOpponentArea.some(p => torpedoAreaBeforeMove.includes(p))) {
             const target = dangerOpponentArea.filter(p => torpedoAreaBeforeMove.includes(p));
-            torpedoInfo = {cell: target[0], priority: 0};
+            torpedoInfo = {cell: target[0], priority: PriorityEnum.TORPEDO_0};
         } else if (dangerOpponentArea.some(p => torpedoAreaAfterMove.includes(p))) {
             const target = dangerOpponentArea.filter(p => torpedoAreaAfterMove.includes(p));
-            torpedoInfo = {cell: target[0], priority: 2};
+            torpedoInfo = {cell: target[0], priority: PriorityEnum.TORPEDO_1};
         }
 
         if (torpedoInfo) {
-            this._previousAttacks.push({order: OrderEnum.TORPEDO, cell: torpedoInfo.cell});
+            this._previousAttacks.push({
+                priority: torpedoInfo.priority,
+                order: OrderEnum.TORPEDO,
+                cell: torpedoInfo.cell
+            });
             result = ({
                 priority: torpedoInfo.priority,
                 order: `${OrderEnum.TORPEDO} ${torpedoInfo.cell.x} ${torpedoInfo.cell.y}`
@@ -356,9 +372,9 @@ export class OurSubmarine extends Submarine {
     private nextPower(hasTorpedoAttack: boolean): OrderEnum {
         if (this.cooldown.torpedo > 0 || hasTorpedoAttack) {
             return OrderEnum.TORPEDO;
-        } else if ((this.cooldown.sonar > 0) && (this.turn % 4 === 0)) {
+        } else if (this.cooldown.sonar > 0 && this.turn % 10 === 0) {
             return OrderEnum.SONAR;
-        } else if ((this.cooldown.silence > 0) && (this.turn % 4 > 1)) {
+        } else if (this.cooldown.silence > 0 && this.turn % 2 === 0) {
             return OrderEnum.SILENCE;
         } else { //  if ((this.cooldown.mine) > 0 && this.opponentPosition) {
             return OrderEnum.MINE;
