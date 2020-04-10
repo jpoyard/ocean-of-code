@@ -2,7 +2,7 @@ import {STYLE} from "./ocean-of-code.component.style";
 import {Grid} from "./services/grid.class";
 import {GRID_PROPERTIES} from "./GRID_PROPERTIES";
 import {Cell, CellTypeEnum} from "./services/cell.class";
-import {DirectionEnum, PathFinder} from "./services/path-finder.class";
+import {PathFinder} from "./services/path-finder.class";
 import {IPathNode} from "./services/our-submarine.class";
 import {PathResolver} from "./services/path-resolver.class";
 import {OrderEnum} from "./services/submarine.class";
@@ -13,6 +13,7 @@ export class OceanOfCodeComponent extends HTMLElement {
     private readonly SURFACE_COLOR = "#fffff";
     private readonly POSITIONS_LINE_COLOR = this.TEXT_COLOR;
     private readonly STARTS_LINE_COLOR = 'red';
+    private readonly VISITED_CELLS_LINE_COLOR = "green";
     private readonly LINE_COLOR = "#c8e0ff";
     private readonly SEA_COLOR = "#569dfa";
     private readonly ISLAND_COLOR = "#FFC107";
@@ -21,44 +22,47 @@ export class OceanOfCodeComponent extends HTMLElement {
     private canvasCtx: CanvasRenderingContext2D;
     private cellSize: number;
     private grid: Grid;
-    private stats: Array<{ cell: Cell, stat: number }>;
     private pathFinder: PathFinder;
     private path: IPathNode[];
     private pathResolver: PathResolver;
-    private area: Array<{ cell: Cell, pathLength: number }>;
+    private timeoutId: number | undefined;
+    private speed = 10;
+    private pathIndex = 0;
 
     constructor() {
         super();
         const tmpGrid = GRID_PROPERTIES.grid.replace(/\n|\r/gm, '').split('');
         this.grid = new Grid(GRID_PROPERTIES.width, GRID_PROPERTIES.height, tmpGrid);
-        this.stats = this.grid.cells.map(cell => ({cell, stat: cell.type === CellTypeEnum.SEA ? 0 : -1}));
         this.init();
         window.addEventListener('resize', () => this.resize());
         this.resize();
 
-        this.pathResolver = new PathResolver(this.grid, console.log);
         this.pathFinder = new PathFinder(this.grid);
+        this.initResolver();
 
         window.onkeydown = (event: KeyboardEvent) => {
-            switch (event.key) {
+            switch (event.code) {
                 case "Delete":
-                    this.stats = this.grid.cells.map(cell => ({cell, stat: cell.type === CellTypeEnum.SEA ? 0 : -1}));
+                    this.initResolver();
                     this.draw();
                     break;
-                /**
-                 case "ArrowUp":
-                 this.goto(DirectionEnum.NORTH);
-                 break;
-                 case "ArrowDown":
-                 this.goto(DirectionEnum.SOUTH);
-                 break;
-                 case "ArrowLeft":
-                 this.goto(DirectionEnum.WEST);
-                 break;
-                 case "ArrowRight":
-                 this.goto(DirectionEnum.EST);
-                 break;
-                 **/
+                case "Space":
+                    if (this.timeoutId) {
+                        clearTimeout(this.timeoutId);
+                        this.timeoutId = undefined;
+                    } else {
+                        // @ts-ignore
+                        this.timeoutId = setTimeout(() => this.draw(), this.speed);
+                    }
+                    break;
+                case "ArrowUp":
+                    if (this.timeoutId) {
+                        clearTimeout(this.timeoutId);
+                        this.timeoutId = undefined;
+                    }
+                    this.pathIndex++;
+                    this.draw();
+                    break;
             }
         }
     }
@@ -69,99 +73,10 @@ export class OceanOfCodeComponent extends HTMLElement {
         this.draw();
     }
 
-    public goto(direction: DirectionEnum): void {
-        const max = this.stats.reduce((max, cur) => Math.max(max, cur.stat), 0);
-        const candidates = this.stats.filter(stat => stat.stat === max);
-
-        switch (direction) {
-            case DirectionEnum.NORTH:
-                candidates.forEach(stat => {
-                    const northCell = this.grid.getNorthCell(stat.cell);
-                    if (northCell && this.grid.isAvailableCell(northCell)) {
-                        this.stats[northCell.index].stat = max + 1;
-                    }
-                    return stat;
-                });
-                break;
-            case DirectionEnum.EST:
-                candidates.forEach(stat => {
-                    const estCell = this.grid.getEstCell(stat.cell);
-                    if (estCell && this.grid.isAvailableCell(estCell)) {
-                        this.stats[estCell.index].stat = max + 1;
-                    }
-                    return stat;
-                });
-                break;
-            case DirectionEnum.SOUTH:
-                candidates.forEach(stat => {
-                    const southCell = this.grid.getSouthCell(stat.cell);
-                    if (southCell && this.grid.isAvailableCell(southCell)) {
-                        this.stats[southCell.index].stat = max + 1;
-                    }
-                    return stat;
-                });
-                break;
-            case DirectionEnum.WEST:
-                candidates.forEach(stat => {
-                    const westCell = this.grid.getWestCell(stat.cell);
-                    if (westCell && this.grid.isAvailableCell(westCell)) {
-                        this.stats[westCell.index].stat = max + 1;
-                    }
-                    return stat;
-                });
-                break;
-            default:
-                break
-        }
-        this.draw();
-    }
-
     private init() {
         this.shadow = this.attachShadow({mode: 'open'});
         const container = document.createElement('div');
         container.classList.add('container');
-
-        const toolbar = document.createElement('div');
-        toolbar.classList.add('toolbar');
-
-        const directionButtons = document.createElement('div');
-        directionButtons.classList.add('buttons');
-        directionButtons.style.marginBottom = '10px';
-
-        const leftButton = document.createElement('button');
-        leftButton.textContent = 'West';
-        leftButton.onclick = () => this.goto(DirectionEnum.WEST);
-        directionButtons.appendChild(leftButton);
-
-        const middleButtons = document.createElement('div');
-        middleButtons.classList.add('middle-buttons');
-
-        const upButton = document.createElement('button');
-        upButton.textContent = 'North';
-        upButton.onclick = () => this.goto(DirectionEnum.NORTH);
-        middleButtons.appendChild(upButton);
-
-        const downButton = document.createElement('button');
-        downButton.textContent = 'South';
-        downButton.onclick = () => this.goto(DirectionEnum.SOUTH);
-        middleButtons.appendChild(downButton);
-
-        directionButtons.appendChild(middleButtons);
-
-        const rightButton = document.createElement('button');
-        rightButton.textContent = 'Est';
-        rightButton.onclick = () => this.goto(DirectionEnum.EST);
-        directionButtons.appendChild(rightButton);
-
-        toolbar.appendChild(directionButtons);
-
-        const searchPathButton = document.createElement('button');
-        searchPathButton.textContent = 'Search path';
-        searchPathButton.onclick = () => this.searchPath();
-
-        toolbar.appendChild(searchPathButton);
-
-        container.appendChild(toolbar);
 
         this.canvas = document.createElement('canvas');
         this.canvas.classList.add('draw-zone');
@@ -208,55 +123,94 @@ export class OceanOfCodeComponent extends HTMLElement {
         this.drawSurfaceLines();
         this.drawIslands();
 
-        if (!this.path && !this.area) {
-            // this.pathFinder.history = []; // TO Display calculation
-            const position = this.pathFinder.searchStartCell().position;
-            this.path = this.pathFinder.searchLongestPath(position);
-            this.pathFinder.history = this.path.map((pathNode, index, array) => {
-                return array.slice(0, index).map(p => ({cell: p.cell, direction: p.direction}));
-            });
-            this.pathResolver = new PathResolver(this.grid, () => {
-            });
-            this.path = this.pathFinder.history.shift();
-        }
-
-        if (this.pathFinder.history && this.pathFinder.history.length > 0) {
+        if (this.pathFinder.history && this.pathIndex < this.pathFinder.history.length) {
             if (this.path && this.path.length > 0) {
-                if (this.path.length % 10 === 0) {
+                if (this.path.length % 8 === 0) {
                     this.pathResolver.applyMoveOrders([{
                         type: OrderEnum.SILENCE,
                         order: {}
                     }])
                 }
-                performance.mark('resolver1');
-                this.pathResolver.applyMoveOrders([{
-                    type: OrderEnum.MOVE,
-                    order: {direction: this.path[this.path.length - 1].direction}
-                }]);
-                performance.mark('resolver2');
-                performance.measure("duration", 'resolver1', 'resolver2');
-                const duration = (performance.getEntriesByType("measure")[0].duration);
-                console.log(this.path.length, duration, this.pathResolver.getPositionsStats());
-                performance.clearMarks();
-                performance.clearMeasures();
-            }
-            this.path = this.pathFinder.history.shift();
-            if (this.pathFinder.history.length > 0) {
-                setTimeout(() => this.draw(), 500);
-            }
-        }
+                const direction = this.path[this.path.length - 1].direction;
+                if (direction) {
+                    const start = performance.now();
 
-        if (this.path) {
-            this.path.forEach((node, index) => this.drawText(index, node.cell))
-        } else if (this.area) {
-            this.area.forEach((area) => this.drawText(area.pathLength, area.cell))
+                    this.pathResolver.applyMoveOrders([{
+                        type: OrderEnum.MOVE,
+                        order: {direction}
+                    }]);
+                    const end = performance.now();
+                    const duration = end - start;
+                    console.log(this.path.length, duration, this.pathResolver.getPositionsStats());
+                }
+            }
+            this.path = this.pathFinder.history[this.pathIndex]; // this.pathFinder.history.shift();
+            this.drawNodes();
+
+            const {cells, starts, visitedCells} = this.pathResolver.getPositionsStats();
+
+            this.strokeCells(starts, this.STARTS_LINE_COLOR, 0);
+            this.drawPositionCells(cells);
+            this.drawVisitedCells(visitedCells);
+
+            if (this.timeoutId && this.pathIndex < this.pathFinder.history.length) {
+                this.pathIndex++;
+                // @ts-ignore
+                this.timeoutId = setTimeout(() => this.draw(), this.speed);
+            }
         } else {
-            this.stats.forEach(stat => this.drawText(stat.stat, stat.cell));
+            this.drawNodes();
         }
+    }
 
-        const {cells, starts} = this.pathResolver.getPositionsStats();
-        this.strokeCells(starts, this.STARTS_LINE_COLOR, 2);
-        this.strokeCells(cells, this.POSITIONS_LINE_COLOR);
+    private drawNodes() {
+        if (this.path) {
+            this.path.forEach((node, index) => this.drawPathNode(index, node.cell));
+        }
+    }
+
+    private initResolver() {
+        const {path} = this.pathFinder.searchStartCell();
+        this.path = path; // this.pathFinder.searchLongestPath(position);
+        this.pathFinder.history = this.path.map((pathNode, index, array) => {
+            return array.slice(0, index).map(p => ({cell: p.cell, direction: p.direction}));
+        });
+        this.pathResolver = new PathResolver(this.grid, () => {
+        });
+        this.pathIndex = 0;
+        this.path = this.pathFinder.history[this.pathIndex];
+    }
+
+    private drawVisitedCells(visitedCells: Map<Cell, number>) {
+        Array.from(visitedCells.entries()).forEach(([cell, counter]) => {
+            const color = this.VISITED_CELLS_LINE_COLOR;
+            this.canvasCtx.font = "0.70em Arial";
+            this.canvasCtx.fillStyle = color;
+            this.canvasCtx.textAlign = "center";
+            this.canvasCtx.textBaseline = 'middle';
+            this.canvasCtx.fillText(counter !== undefined ? counter.toString() : '-',
+                OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 4,
+                OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2 + this.cellSize / 4,
+                this.cellSize / 2);
+
+            this.strokeCell(cell, color, 4)
+        })
+    }
+
+    private drawPositionCells(positions: Map<Cell, number>) {
+        Array.from(positions.entries()).forEach(([cell, counter]) => {
+            const color = this.POSITIONS_LINE_COLOR;
+            this.canvasCtx.font = "0.70em Arial";
+            this.canvasCtx.fillStyle = color;
+            this.canvasCtx.textAlign = "center";
+            this.canvasCtx.textBaseline = 'middle';
+            this.canvasCtx.fillText(counter !== undefined ? counter.toString() : '-',
+                OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 2 + this.cellSize / 4,
+                OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2 + this.cellSize / 4,
+                this.cellSize / 2);
+
+            this.strokeCell(cell, color, 2)
+        })
     }
 
     private drawOcean() {
@@ -319,7 +273,7 @@ export class OceanOfCodeComponent extends HTMLElement {
             .forEach(cell => this.fillCell(cell, this.ISLAND_COLOR));
     }
 
-    private drawText(value: any, cell: Cell) {
+    private drawPathNode(value: any, cell: Cell) {
         if (cell) {
             const color = `rgb(${255 - Number.parseInt(value)},${255 - Number.parseInt(value)},255)`;
             this.fillCell(cell, color);
@@ -329,7 +283,7 @@ export class OceanOfCodeComponent extends HTMLElement {
             this.canvasCtx.textBaseline = 'middle';
             this.canvasCtx.fillText(value !== undefined ? value.toString() : '-',
                 OceanOfCodeComponent.MARGE + cell.x * this.cellSize + this.cellSize / 2,
-                OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 2,
+                OceanOfCodeComponent.MARGE + cell.y * this.cellSize + this.cellSize / 3,
                 this.cellSize);
         }
     }
@@ -339,8 +293,8 @@ export class OceanOfCodeComponent extends HTMLElement {
         this.canvasCtx.strokeRect(
             OceanOfCodeComponent.MARGE + cell.x * this.cellSize + resize,
             OceanOfCodeComponent.MARGE + cell.y * this.cellSize + resize,
-            this.cellSize - resize*2,
-            this.cellSize - resize*2);
+            this.cellSize - resize * 2,
+            this.cellSize - resize * 2);
     }
 
     private fillCell(cell: Cell, color: string) {

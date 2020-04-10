@@ -6,10 +6,11 @@ import {IMoveOrder, IOrder, ISurfaceOrder, ITorpedoOrder} from "./opponent-subma
 import {IMoveStrategy, MOVE_STRATEGIES_SE} from "./path-finder.class";
 
 export interface IPositionsStats {
-    cells: Cell[];
+    cells: Map<Cell, number>;
     numberOfMoves: number;
     surfaceStats: Map<number, Cell[]>;
     starts: Cell[];
+    visitedCells: Map<Cell, number>;
 }
 
 export interface IPathScenario {
@@ -26,7 +27,7 @@ export class PathResolver {
     private _startPositions: Cell[];
     private _moveScenarios: IMoveScenario[];
 
-    constructor(private grid: Grid, public log: (...arg)=>void) {
+    constructor(private grid: Grid, public log: (...arg) => void) {
         this._startPositions = this.grid.getAvailableCells();
         this._moveScenarios = [];
     }
@@ -106,7 +107,9 @@ export class PathResolver {
     }
 
     public getPositionsStats(): IPositionsStats {
-        const possiblePositions = this.getPossiblePositions();
+        //const possiblePositions = this.getPossiblePositions();
+        let {positions, visitedCells} = this.getStats();
+        const possiblePositions = Array.from(positions.keys());
         const surfaceStats = possiblePositions.reduce((acc, cur) => {
             let cells: Cell[] = [];
             if (acc.has(cur.surface)) {
@@ -115,11 +118,37 @@ export class PathResolver {
             return acc.set(cur.surface, [...cells, cur])
         }, new Map<number, Cell[]>());
         return {
-            cells: possiblePositions,
+            cells: positions,
             numberOfMoves: this._moveScenarios.length,
+            visitedCells: visitedCells,
             starts: this._startPositions,
             surfaceStats
         }
+    }
+
+    public getStats(): { positions: Map<Cell, number>, visitedCells: Map<Cell, number> } {
+        const result = {positions: new Map<Cell, number>(), visitedCells: new Map<Cell, number>()};
+        this._moveScenarios.forEach(moveScenario => {
+            Array.from(moveScenario.paths.values()).forEach(
+                path => {
+                    let usePositionCounter = 1;
+                    if (result.positions.has(path.position)) {
+                        usePositionCounter = result.positions.get(path.position) + 1
+                    }
+                    result.positions.set(path.position, usePositionCounter);
+                    path.visitedCells.forEach(
+                        cell => {
+                            let useCellCounter = 1;
+                            if (result.visitedCells.has(cell)) {
+                                useCellCounter = result.visitedCells.get(cell) + 1
+                            }
+                            result.visitedCells.set(cell, useCellCounter)
+                        }
+                    )
+                }
+            )
+        });
+        return result;
     }
 
     public getPossiblePositions(): Cell[] {
@@ -129,10 +158,10 @@ export class PathResolver {
                     .map(pathScenario => pathScenario.position)
             )
             .reduce((acc, cur) => [...acc, ...cur], []);
-        const mergedcell = Cell.removeDuplicate(cells);
-
-        this.log('duplicate: ', cells.length - mergedcell.length);
-        return mergedcell;
+        // const mergedcell = Cell.removeDuplicate(cells);
+        // this.log('duplicate: ', cells.length - mergedcell.length);
+        /// return mergedcell;
+        return cells;
     }
 
     public keepOnlyPosition(coordinate: ICoordinate) {
@@ -340,7 +369,7 @@ export class PathResolver {
                     .some(moveScenario => moveScenario.paths.has(startPosition.index))
             }
         );
-        this.log('After',{moveScenarios: this._moveScenarios.length});
+        this.log('After', {moveScenarios: this._moveScenarios.length});
     }
 
 

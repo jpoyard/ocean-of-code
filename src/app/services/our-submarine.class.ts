@@ -127,7 +127,7 @@ export class OurSubmarine extends Submarine {
                     this.opponentSubmarine.pathResover.keepOnlyPositions(dangerArea);
                     break;
                 case 2:
-                    if (this._positionsStats.cells.includes(this.grid.getCellFromCoordinate(this._previousAttacks[0].cell))) {
+                    if (this._positionsStats.cells.has(this.grid.getCellFromCoordinate(this._previousAttacks[0].cell))) {
                         log('Hit hard! position is validated');
                         this.opponentSubmarine.pathResover.keepOnlyPosition((this._previousAttacks[0].cell));
                     }
@@ -199,14 +199,15 @@ export class OurSubmarine extends Submarine {
         let result: IAction[] = [];
         this._positionsStats = this.opponentSubmarine.pathResover.getPositionsStats();
         log({
-            cells: this._positionsStats.cells.length < 10 && this._positionsStats.cells.length > 0
-                ? this._positionsStats.cells.map(pos => pos.coordinate) : this._positionsStats.cells.length,
+            cells: this._positionsStats.cells.size < 10 && this._positionsStats.cells.size > 0
+                ? Array.from(this._positionsStats.cells.keys()).map(pos => pos.coordinate)
+                : this._positionsStats.cells.size,
             numberOfMoves: this._positionsStats.numberOfMoves,
             starts: this._positionsStats.starts.length,
             surfaceStats: Array.from(this._positionsStats.surfaceStats.entries()).map(entry => `${entry[0]}(${entry[1].length})`)
         });
-        if (this._positionsStats.cells.length > 1 && this._positionsStats.cells.length <= 10) {
-            const {min, max} = Cell.getMinMax(...this._positionsStats.cells);
+        if (this._positionsStats.cells.size > 1 && this._positionsStats.cells.size <= 10) {
+            const {min, max} = Cell.getMinMax(...Array.from(this._positionsStats.cells.keys()));
             if (((max.x - min.x) <= 3) && ((max.y - min.y) <= 3)) {
                 log(`deduce position: between {x: ${min.x} to ${max.x}, y: ${min.y} to ${max.y}}`);
                 this._opponentPosition = this.grid.getCellFromCoordinate({
@@ -214,7 +215,7 @@ export class OurSubmarine extends Submarine {
                     y: Math.floor((min.y + max.y) / 2)
                 });
             }
-        } else if (this._positionsStats.cells.length === 1) {
+        } else if (this._positionsStats.cells.size === 1) {
             this._opponentPosition = this._positionsStats.cells[0];
         } else {
             this._opponentPosition = undefined;
@@ -231,7 +232,7 @@ export class OurSubmarine extends Submarine {
                 result.push(this.sendTorpedo(opponentCell, nextPosition));
             }
         } else {
-            result.push(OurSubmarine.sendMessage(`SEARCH: P:${this._positionsStats.cells.length} / M:${this._positionsStats.numberOfMoves} / S:${this._positionsStats.surfaceStats.size}`));
+            result.push(OurSubmarine.sendMessage(`SEARCH: P:${this._positionsStats.cells.size} / M:${this._positionsStats.numberOfMoves} / S:${this._positionsStats.surfaceStats.size}`));
 
             if (this.cooldown.sonar === 0) {
                 result.push(this.useSonar());
@@ -291,7 +292,7 @@ export class OurSubmarine extends Submarine {
         let targetedMines = this._mines
             .map(mine => {
                 const mineDangerArea = this.grid.getDangerArea(mine);
-                const cells = this._positionsStats.cells.filter(c => mineDangerArea.includes(c));
+                const cells = Array.from(this._positionsStats.cells.keys()).filter(c => mineDangerArea.includes(c));
                 return ({cells, mine})
             })
             .filter(m => m.cells.length > 1)
@@ -311,13 +312,13 @@ export class OurSubmarine extends Submarine {
     private useSonar(): IAction {
         let result: IAction;
         this._sonar.surface = undefined;
-        if (this._positionsStats.cells.length > 10 && this._positionsStats.surfaceStats.size > 3) {
+        if (this._positionsStats.cells.size > 10 && this._positionsStats.surfaceStats.size > 3) {
             const surfaces = Array.from(this._positionsStats.surfaceStats.entries())
                 .sort((a, b) => b[1].length - a[1].length);
             if (surfaces.length > 1) {
                 this._sonar.surface = surfaces[0][0];
             }
-        } else if (this._positionsStats.cells.length === 0) {
+        } else if (this._positionsStats.cells.size === 0) {
             this._sonar.surface = Math.floor(Math.random() * 8) + 1;
         }
 
