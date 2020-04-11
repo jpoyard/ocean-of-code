@@ -42,6 +42,7 @@ export const MOVE_STRATEGIES_NE: IMoveStrategy[] = createMoveStrategies(
 );
 
 export class PathFinder {
+    public history: IPath[][];
     private _directionStrategies: IMoveStrategy[] = MOVE_STRATEGIES_NE;
     private _visitedCells = new Set<Cell>();
 
@@ -77,8 +78,13 @@ export class PathFinder {
     }
 
     public searchStartCell(): { path: IPathNode[], position: Cell } {
-        let availableStartCells = this.grid.surfaces[4].cells
-            .filter((cell) => cell.type === CellTypeEnum.SEA);
+        let availableStartCells = [
+            {x: 0, y: 0},
+            {x: this.grid.width - 1, y: 0},
+            {x: this.grid.width - 1, y: this.grid.height - 1},
+            {x: 0, y: this.grid.height - 1}]
+            .map(coordinate => this.grid.getCellFromCoordinate(coordinate))
+            .filter((cell) => cell && cell.type === CellTypeEnum.SEA);
         return availableStartCells
             .map(position => ({position, path: this.searchLongestPath(position)}))
             .sort((a, b) => b.path.length - a.path.length)[0];
@@ -160,7 +166,6 @@ export class PathFinder {
         return result;
     }
 
-    public history: IPath[][];
     public searchLongestPath(cell: Cell): IPathNode[] {
         let result: IPathNode[] = [];
 
@@ -178,7 +183,7 @@ export class PathFinder {
             pathNodes.push({cell});
 
             let minLength = Math.floor(availableCells.size * 0.90);
-            let maxIteration = availableCells.size * 4;
+            let maxIteration = availableCells.size * availableCells.size;
 
             let iteration = 0;
             do {

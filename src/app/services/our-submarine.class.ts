@@ -168,21 +168,22 @@ export class OurSubmarine extends Submarine {
             this._pathFinder.clearVisitedCell();
             result.push({priority: PriorityEnum.SURFACE, order: OrderEnum.SURFACE});
             this._path = this._pathFinder.searchLongestPath(this.position);
-        } else {
-            const power = this.nextPower(!!torpedoAttack);
-            let direction = this._path.shift().direction;
-            result.push({priority: PriorityEnum.MOVE, order: `${OrderEnum.MOVE} ${direction}${power ? ' ' + power : ''}`});
-            if (this._path.length > 5 && this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack)) {
-                result.push(this.silenceMove());
-            }
+        }
+
+        const power = this.nextPower(!!torpedoAttack);
+        let direction = this._path.shift().direction;
+        result.push({priority: PriorityEnum.MOVE, order: `${OrderEnum.MOVE} ${direction}${power ? ' ' + power : ''}`});
+        if (this._path.length > 5 && this.cooldown.silence === 0 && (this.lost > 0 || torpedoAttack || (this.turn % 55 < 10))) {
+            result.push(this.silenceMove(this._path[0].cell));
         }
         return result
     }
 
-    private silenceMove(): IAction {
+    private silenceMove(position: Cell): IAction {
         let direction = DirectionEnum.WEST;
+        //this._path = this._pathFinder.searchLongestPath(position);
         let length = 0;
-        if (this._path.length > 4) {
+        if (this._path.length > 1) {
             length = 1;
             direction = this._path.shift().direction;
             while (this._path.length > 0 && direction === this._path[0].direction && length < 4) {
@@ -216,7 +217,7 @@ export class OurSubmarine extends Submarine {
                 });
             }
         } else if (this._positionsStats.cells.size === 1) {
-            this._opponentPosition = this._positionsStats.cells[0];
+            this._opponentPosition = Array.from(this._positionsStats.cells.keys())[0];
         } else {
             this._opponentPosition = undefined;
         }
@@ -241,7 +242,8 @@ export class OurSubmarine extends Submarine {
             else if (this.cooldown.torpedo === 0
                 && this._positionsStats.surfaceStats.has(this.position.surface)) {
                 result.push(this.sendTorpedoAsSonar(nextPosition));
-            } */
+            }
+             */
         }
 
         if (this._mines.length > 0) {
@@ -289,15 +291,18 @@ export class OurSubmarine extends Submarine {
         let result: IAction;
         log({mines: this._mines.map(m => m.coordinate)});
         const dangerArea = new Set([...this.grid.getDangerArea(this.position), ...this.grid.getDangerArea(nextPosition)]);
-        let targetedMines = this._mines
-            .map(mine => {
-                const mineDangerArea = this.grid.getDangerArea(mine);
-                const cells = Array.from(this._positionsStats.cells.keys()).filter(c => mineDangerArea.includes(c));
-                return ({cells, mine})
-            })
-            .filter(m => m.cells.length > 1)
-            .filter(m => !dangerArea.has(m.mine))
-            .map(m => m.mine);
+        let targetedMines = [];
+        if (this._positionsStats.cells.size < 10) {
+            targetedMines = this._mines
+                .map(mine => {
+                    const mineDangerArea = this.grid.getDangerArea(mine);
+                    const cells = Array.from(this._positionsStats.cells.keys()).filter(c => mineDangerArea.includes(c));
+                    return ({cells, mine})
+                })
+                .filter(m => m.cells.length > 1)
+                .filter(m => !dangerArea.has(m.mine))
+                .map(m => m.mine);
+        }
 
         if (targetedMines.length > 0) {
             const mine = targetedMines[0];

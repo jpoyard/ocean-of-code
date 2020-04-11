@@ -121,7 +121,7 @@ export class Grid extends CellContainer {
             }
         }
 
-        log(`danger area : {x: ${coordinate.x}, y: ${coordinate.y}}: ${result.length}`);
+        // log(`danger area : {x: ${coordinate.x}, y: ${coordinate.y}}: ${result.length}`);
         return result;
     }
 

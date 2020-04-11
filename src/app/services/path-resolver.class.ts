@@ -1,4 +1,4 @@
-import {Cell} from "./cell.class";
+import {Cell, CellTypeEnum} from "./cell.class";
 import {Grid} from "./grid.class";
 import {ICoordinate, Position} from "./position.class";
 import {OrderEnum} from "./submarine.class";
@@ -60,7 +60,7 @@ export class PathResolver {
         }
     }
 
-    public applyMoveOrders(orders: IOrder[]) {
+    public applyOrders(orders: IOrder[], lost: number) {
         this.log({orders: JSON.stringify(orders)});
 
         if (this._moveScenarios.length === 0) {
@@ -94,11 +94,13 @@ export class PathResolver {
                     this.updateMoveStrategies();
                     break;
                 case OrderEnum.TORPEDO:
-                    this.keepOnlyPositionsNearTorpedoArea((order.order as ITorpedoOrder).coordinate);
+                    this.keepOnlyPositionsNearTorpedoArea((order.order as ITorpedoOrder).coordinate, lost);
                     break;
                 case OrderEnum.SURFACE:
                     const positions = this.getPossiblePositions().filter(c => c.surface === (order.order as ISurfaceOrder).index);
-                    this._startPositions = (positions.length > 0) ? positions : this.grid.getAvailableCells().filter(c => c.surface === (order.order as ISurfaceOrder).index);
+                    this._startPositions = (positions.length > 0)
+                        ? positions.filter(cell=>cell.surface === (order.order as ISurfaceOrder).index)
+                        : this.grid.surfaces[(order.order as ISurfaceOrder).index - 1].cells.filter(cell => cell.type === CellTypeEnum.SEA);
                     this._moveScenarios = [this.createMoveScenario()];
                     this.updateMoveStrategies();
                     break;
@@ -287,8 +289,13 @@ export class PathResolver {
         this.updateMoveStrategies();
     }
 
-    public keepOnlyPositionsNearTorpedoArea(coordinate: ICoordinate) {
-        const torpedoArea = this.grid.getTorpedoArea(new Position(coordinate));
+    public keepOnlyPositionsNearTorpedoArea(coordinate: ICoordinate, lost: number) {
+        let torpedoArea = [];
+        if (lost === 0) {
+            torpedoArea = this.grid.getTorpedoAreaWithoutDangerArea(new Position(coordinate));
+        } else {
+            torpedoArea = this.grid.getTorpedoArea(new Position(coordinate));
+        }
         this._moveScenarios.forEach(
             moveScenario => {
                 Array.from(moveScenario.paths.keys()).forEach(
@@ -360,6 +367,14 @@ export class PathResolver {
 
     private updateMoveStrategies(): void {
         this.log('Before', {moveScenarios: this._moveScenarios.length});
+
+        const {cells} = this.getPositionsStats();
+        if (cells.size < 10) {
+            Array.from(cells.keys()).forEach(
+                cell => this.log(cell.toString())
+            )
+        }
+
         this._moveScenarios = this._moveScenarios.filter(
             scenario => scenario.paths.size > 0
         );

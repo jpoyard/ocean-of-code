@@ -128,6 +128,6 @@ export class OpponentSubmarine extends Submarine {
     }
 
     public setOrders(orders: string[]) {
-        this.pathResover.applyMoveOrders(OpponentSubmarine.parse(orders));
+        this.pathResover.applyOrders(OpponentSubmarine.parse(orders), this.lost);
     }
 }

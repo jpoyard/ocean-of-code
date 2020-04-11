@@ -126,19 +126,19 @@ export class OceanOfCodeComponent extends HTMLElement {
         if (this.pathFinder.history && this.pathIndex < this.pathFinder.history.length) {
             if (this.path && this.path.length > 0) {
                 if (this.path.length % 8 === 0) {
-                    this.pathResolver.applyMoveOrders([{
+                    this.pathResolver.applyOrders([{
                         type: OrderEnum.SILENCE,
                         order: {}
-                    }])
+                    }], 0)
                 }
                 const direction = this.path[this.path.length - 1].direction;
                 if (direction) {
                     const start = performance.now();
 
-                    this.pathResolver.applyMoveOrders([{
+                    this.pathResolver.applyOrders([{
                         type: OrderEnum.MOVE,
                         order: {direction}
-                    }]);
+                    }], 0);
                     const end = performance.now();
                     const duration = end - start;
                     console.log(this.path.length, duration, this.pathResolver.getPositionsStats());
@@ -311,12 +311,14 @@ export class OceanOfCodeComponent extends HTMLElement {
         const y = Math.floor((event.offsetY - OceanOfCodeComponent.MARGE) / this.cellSize);
         const position = this.grid.getCellFromCoordinate({x, y});
 
-        this.pathFinder.history = undefined;
-        //this.pathFinder.defineStrategiesOrder(position);
-        //this.path = this.pathFinder.getMoveStrategies(position);
-        this.path = this.pathFinder.searchLongestPath(position);
-        //this.area = this.grid.getDangerArea(position.coordinate).map(cell=>({cell, pathLength: position.pathLength(cell)}));
+        if (position) {
+            this.pathFinder.history = undefined;
+            //this.pathFinder.defineStrategiesOrder(position);
+            //this.path = this.pathFinder.getMoveStrategies(position);
+            this.path = this.pathFinder.searchLongestPath(position);
+            //this.area = this.grid.getDangerArea(position.coordinate).map(cell=>({cell, pathLength: position.pathLength(cell)}));
 
-        this.draw();
+            this.draw();
+        }
     }
 }
