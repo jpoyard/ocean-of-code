@@ -78,11 +78,7 @@ export class PathFinder {
     }
 
     public searchStartCell(): { path: IPathNode[], position: Cell } {
-        let availableStartCells = [
-            {x: 0, y: 0},
-            {x: this.grid.width - 1, y: 0},
-            {x: this.grid.width - 1, y: this.grid.height - 1},
-            {x: 0, y: this.grid.height - 1}]
+        let availableStartCells = this.grid.surfaces[4].cells
             .map(coordinate => this.grid.getCellFromCoordinate(coordinate))
             .filter((cell) => cell && cell.type === CellTypeEnum.SEA);
         return availableStartCells
@@ -168,17 +164,29 @@ export class PathFinder {
 
     public searchLongestPath(cell: Cell): IPathNode[] {
         let result: IPathNode[] = [];
+        let oppositeCell = this.grid.getCellFromCoordinate({
+            x: Math.abs(cell.x - (this.grid.width - 1)),
+            y: Math.abs(cell.y - (this.grid.height - 1))
+        });
 
-        if (this.grid.isAvailableCell(cell)) {
+        if (oppositeCell && this.grid.isAvailableCell(oppositeCell) && !this.isVisitedCell(oppositeCell) && this.grid.isAvailableCell(cell)) {
             let pathNodes: IPathNode[] = [];
             let availableCells: Set<Cell> = new Set<Cell>(
                 this.grid.getAvailableCells().filter((c) => !this.isVisitedCell(c) && cell !== c));
+            this.defineStrategiesOrder(cell);
             let store = Array.from(availableCells).reduce((store, cur) => {
-                this.defineStrategiesOrder(cur);
-                store.set(cur, {cell: cur, paths: this.getAvailablePaths(cur, availableCells)});
+                const paths = this.getAvailablePaths(cur, availableCells)
+                    .map(p => ({...p, score: p.cell.pathLength(oppositeCell)}))
+                    .sort((a, b) =>  a.score - b.score);
+                store.set(cur, {cell: cur, paths});
                 return store;
             }, new Map<Cell, IPathNode>());
-            store.set(cell, {cell, paths: this.getAvailablePaths(cell, availableCells)});
+            store.set(cell, {
+                cell,
+                paths: this.getAvailablePaths(cell, availableCells)
+                    .map(p => ({...p, score: p.cell.pathLength(oppositeCell)}))
+                    .sort((a, b) => b.score - a.score)
+            });
 
             pathNodes.push({cell});
 
@@ -198,7 +206,7 @@ export class PathFinder {
                         .filter(p => availableCells.has(p.cell));
                 }
 
-                if (currentPathNode.paths.length === 0 && pathNodes.length >= result.length) {
+                if ((currentPathNode.paths.length === 0 || currentPathNode.cell === oppositeCell) && pathNodes.length >= result.length) {
                     result = pathNodes.map(node => ({
                         cell: node.cell,
                         direction: node.direction
