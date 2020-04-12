@@ -1,8 +1,8 @@
 import {Grid} from "./grid.class";
 import {OrderEnum, Submarine} from "./submarine.class";
 import {ICoordinate} from "./position.class";
-import {PathResolver} from "./path-resolver.class";
 import {DirectionEnum} from "./path-finder.class";
+import {TrackResolver} from "./track-resolver.class";
 
 export interface IMoveOrder {
     direction: DirectionEnum;
@@ -110,11 +110,11 @@ export const ORDER_PARSER_STRATEGIES: IOrderParserStrategy[] = [
 ];
 
 export class OpponentSubmarine extends Submarine {
-    public pathResover: PathResolver;
+    public trackResover: TrackResolver;
 
-    constructor(id: number, grid: Grid) {
+    constructor(id: number, grid: Grid, log) {
         super(id, grid);
-        this.pathResover = new PathResolver(grid, log);
+        this.trackResover = new TrackResolver(grid, log);
     }
 
     public static parse(orders: string[]): IOrder[] {
@@ -128,6 +128,6 @@ export class OpponentSubmarine extends Submarine {
     }
 
     public setOrders(orders: string[]) {
-        this.pathResover.applyOrders(OpponentSubmarine.parse(orders), this.lost);
+        this.trackResover.applyOrders(OpponentSubmarine.parse(orders), this.lost);
     }
 }

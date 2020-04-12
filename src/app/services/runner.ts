@@ -15,7 +15,7 @@ for (let i = 0; i < height; i++) {
     tmpGrid = [...tmpGrid, ...readline().split('')];
 }
 const grid = new Grid(width, height, tmpGrid);
-const opponentSubmarine = new OpponentSubmarine(myId === 0 ? 1 : 0, grid);
+const opponentSubmarine = new OpponentSubmarine(myId === 0 ? 1 : 0, grid, log);
 const ourSubmarine = new OurSubmarine(myId, grid, opponentSubmarine);
 
 let position = ourSubmarine.searchStartCell();

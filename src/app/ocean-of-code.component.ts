@@ -4,8 +4,8 @@ import {GRID_PROPERTIES} from "./GRID_PROPERTIES";
 import {Cell, CellTypeEnum} from "./services/cell.class";
 import {PathFinder} from "./services/path-finder.class";
 import {IPathNode} from "./services/our-submarine.class";
-import {PathResolver} from "./services/path-resolver.class";
 import {OrderEnum} from "./services/submarine.class";
+import {TrackResolver} from "./services/track-resolver.class";
 
 export class OceanOfCodeComponent extends HTMLElement {
     public static readonly MARGE = 6;
@@ -24,9 +24,9 @@ export class OceanOfCodeComponent extends HTMLElement {
     private grid: Grid;
     private pathFinder: PathFinder;
     private path: IPathNode[];
-    private pathResolver: PathResolver;
+    private trackResolver: TrackResolver;
     private timeoutId: number | undefined;
-    private speed = 10;
+    private speed = 500;
     private pathIndex = 0;
 
     constructor() {
@@ -126,7 +126,7 @@ export class OceanOfCodeComponent extends HTMLElement {
         if (this.pathFinder.history && this.pathIndex < this.pathFinder.history.length) {
             if (this.path && this.path.length > 0) {
                 if (this.path.length % 8 === 0) {
-                    this.pathResolver.applyOrders([{
+                    this.trackResolver.applyOrders([{
                         type: OrderEnum.SILENCE,
                         order: {}
                     }], 0)
@@ -135,19 +135,19 @@ export class OceanOfCodeComponent extends HTMLElement {
                 if (direction) {
                     const start = performance.now();
 
-                    this.pathResolver.applyOrders([{
+                    this.trackResolver.applyOrders([{
                         type: OrderEnum.MOVE,
                         order: {direction}
                     }], 0);
                     const end = performance.now();
                     const duration = end - start;
-                    console.log(this.path.length, duration, this.pathResolver.getPositionsStats());
+                    console.log(this.path.length, duration, this.trackResolver.getPositionsStats());
                 }
             }
             this.path = this.pathFinder.history[this.pathIndex]; // this.pathFinder.history.shift();
             this.drawNodes();
 
-            const {cells, starts, visitedCells} = this.pathResolver.getPositionsStats();
+            const {cells, starts, visitedCells} = this.trackResolver.getPositionsStats();
 
             this.strokeCells(starts, this.STARTS_LINE_COLOR, 0);
             this.drawPositionCells(cells);
@@ -175,7 +175,7 @@ export class OceanOfCodeComponent extends HTMLElement {
         this.pathFinder.history = this.path.map((pathNode, index, array) => {
             return array.slice(0, index).map(p => ({cell: p.cell, direction: p.direction}));
         });
-        this.pathResolver = new PathResolver(this.grid, () => {
+        this.trackResolver = new TrackResolver(this.grid, () => {
         });
         this.pathIndex = 0;
         this.path = this.pathFinder.history[this.pathIndex];

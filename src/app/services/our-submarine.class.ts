@@ -4,7 +4,7 @@ import {OpponentSubmarine} from "./opponent-submarine.class";
 import {ICoordinate} from "./position.class";
 import {OrderEnum, Submarine} from "./submarine.class";
 import {DirectionEnum, PathFinder} from "./path-finder.class";
-import {IPositionsStats} from "./path-resolver.class";
+import {IPositionsStats} from "./track-resolver.class";
 
 export interface ICooldown {
     torpedo: number;
@@ -73,10 +73,10 @@ export class OurSubmarine extends Submarine {
         this._sonar.result = value as SonarResultEnum;
         switch (this._sonar.result) {
             case SonarResultEnum.YES:
-                this.opponentSubmarine.pathResover.keepOnlyPositionsInSurface(this._sonar.surface);
+                this.opponentSubmarine.trackResover.keepOnlyPositionsInSurface(this._sonar.surface);
                 break;
             case SonarResultEnum.NO:
-                this.opponentSubmarine.pathResover.excludePositionsInSurface(this._sonar.surface);
+                this.opponentSubmarine.trackResover.excludePositionsInSurface(this._sonar.surface);
                 break;
             case SonarResultEnum.NONE:
                 break;
@@ -119,17 +119,17 @@ export class OurSubmarine extends Submarine {
             switch (this.opponentSubmarine.lost) {
                 case 0:
                     log('Miss, should exclude positions', dangerArea.map(c => c.coordinate));
-                    this.opponentSubmarine.pathResover.excludePositions(dangerArea);
+                    this.opponentSubmarine.trackResover.excludePositions(dangerArea);
                     break;
                 case 1:
                     log(`Hit! should keep only danger area around {x:${this._previousAttacks[0].cell.x}, y:${this._previousAttacks[0].cell.y}}`, dangerArea.map(c => c.coordinate));
-                    this.opponentSubmarine.pathResover.excludePosition(this._previousAttacks[0].cell);
-                    this.opponentSubmarine.pathResover.keepOnlyPositions(dangerArea);
+                    this.opponentSubmarine.trackResover.excludePosition(this._previousAttacks[0].cell);
+                    this.opponentSubmarine.trackResover.keepOnlyPositions(dangerArea);
                     break;
                 case 2:
                     if (this._positionsStats.cells.has(this.grid.getCellFromCoordinate(this._previousAttacks[0].cell))) {
                         log('Hit hard! position is validated');
-                        this.opponentSubmarine.pathResover.keepOnlyPosition((this._previousAttacks[0].cell));
+                        this.opponentSubmarine.trackResover.keepOnlyPosition((this._previousAttacks[0].cell));
                     }
                     break;
                 default:
@@ -198,7 +198,7 @@ export class OurSubmarine extends Submarine {
         this._previousAttacks = [];
         this._opponentPosition = undefined;
         let result: IAction[] = [];
-        this._positionsStats = this.opponentSubmarine.pathResover.getPositionsStats();
+        this._positionsStats = this.opponentSubmarine.trackResover.getPositionsStats();
         log({
             cells: this._positionsStats.cells.size < 10 && this._positionsStats.cells.size > 0
                 ? Array.from(this._positionsStats.cells.keys()).map(pos => pos.coordinate)

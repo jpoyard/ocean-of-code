@@ -16,7 +16,7 @@ describe(OurSubmarine.name, () => {
                         // Given
                         const sample = GRID_SAMPLE[0];
                         const grid = new Grid(sample.width, sample.height, sample.grid);
-                        const opponentSubmarine = new OpponentSubmarine(1, grid);
+                        const opponentSubmarine = new OpponentSubmarine(1, grid, console.log);
                         const ourSubmarine = new OurSubmarine(0, grid, opponentSubmarine);
 
                         // When
@@ -44,7 +44,7 @@ describe(OurSubmarine.name, () => {
             // Given
             const sample = GRID_SAMPLE[0];
             const grid = new Grid(sample.width, sample.height, sample.grid);
-            const opponentSubmarine = new OpponentSubmarine(1, grid);
+            const opponentSubmarine = new OpponentSubmarine(1, grid, console.log);
             const ourSubmarine = new OurSubmarine(0, grid, opponentSubmarine);
             expect(ourSubmarine.cooldown).toEqual({
                 torpedo: -1,
